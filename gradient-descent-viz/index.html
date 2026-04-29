@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gradient descent · SML neural networks</title>
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/scene1.css">
+  <link rel="stylesheet" href="css/scene2.css">
+  <link rel="stylesheet" href="css/scene2-plot.css">
+  <link rel="stylesheet" href="css/scene2-strip-arch.css">
+  <link rel="stylesheet" href="css/scene2-loss-curve.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">SML &middot; Neural Networks</div>
+    <div id="scene-title" class="scene-title">Scene · loading…</div>
+    <div class="right-cluster">
+      <button id="prev-btn" class="pager-btn" type="button">&larr;</button>
+      <div id="dot-pager" class="dot-pager"></div>
+      <button id="next-btn" class="pager-btn" type="button">&rarr;</button>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">theme</button>
+    </div>
+  </header>
+
+  <main id="stage" class="stage"></main>
+
+  <script src="vendor/katex/katex.min.js"></script>
+  <script src="data/datasets.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/loss-utils.js"></script>
+  <script src="js/optimizers.js"></script>
+  <script src="js/optimizer-info.js"></script>
+  <script src="js/training-engine.js"></script>
+  <script src="js/scenes/scene1.js"></script>
+  <script src="js/scenes/scene2-plot.js"></script>
+  <script src="js/scenes/scene2-strip-arch.js"></script>
+  <script src="js/scenes/scene2-loss-curve.js"></script>
+  <script src="js/scenes/scene2.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

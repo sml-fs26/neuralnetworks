@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stack neurons, build curves</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ghost-functions.css">
+  <link rel="stylesheet" href="css/neuron-strip.css">
+  <link rel="stylesheet" href="css/architecture.css">
+  <link rel="stylesheet" href="css/plot-hover.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">SML &middot; Neural Networks</div>
+    <div class="scene-title">Demo 2 &middot; Stack neurons, build curves</div>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">
+      <span class="theme-toggle-label">theme</span>
+    </button>
+  </header>
+
+  <main class="stage">
+    <section class="hero">
+      <h1>Stack neurons, build curves.</h1>
+      <p class="subtitle">A neuron with no activation is linear regression. Each ReLU adds one kink. Stack enough kinks and you can fit anything.</p>
+    </section>
+
+    <section class="plot-card">
+      <svg id="plot" viewBox="0 0 720 300" role="img" aria-label="Regression plot showing fit, ground truth and noisy data points"></svg>
+    </section>
+
+    <p class="strip-caption">
+      Each dot is one hidden unit &middot; position = its kink &middot; color = sign of w<sub>1</sub> &middot; size = |v| &middot; edge thickness in the diagram = |weight|
+    </p>
+
+    <section id="neuron-strip" class="neuron-strip" aria-label="Hidden-unit strip">
+      <svg id="strip" viewBox="0 0 720 48" role="img"></svg>
+      <div id="strip-tooltip" class="strip-tooltip" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="architecture" class="architecture" aria-label="Network architecture diagram">
+      <svg id="arch-svg" viewBox="0 0 720 110" role="img"></svg>
+    </section>
+
+    <section class="controls">
+      <label class="slider-row" for="width">
+        <span class="slider-label">Hidden units</span>
+        <input id="width" type="range" min="0" max="30" step="1" value="0">
+        <output id="width-value" for="width">0</output>
+      </label>
+      <p id="caption" class="caption">Width = 0 &mdash; a straight line. This is linear regression.</p>
+    </section>
+
+    <footer class="footnote">
+      <span class="legend-item"><span class="swatch swatch-fit"></span>Fit</span>
+      <span class="legend-item"><span class="swatch swatch-truth"></span>Truth</span>
+      <span class="legend-item"><span class="swatch swatch-fires-right"></span>w<sub>1</sub>, v &gt; 0</span>
+      <span class="legend-item"><span class="swatch swatch-fires-left"></span>w<sub>1</sub>, v &lt; 0</span>
+      <span class="footnote-meta">Hover the plot to see firing neurons &middot; click a hidden unit to isolate &middot; <kbd>t</kbd> toggles theme.</span>
+    </footer>
+  </main>
+
+  <script src="data/datasets.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/ghost-functions.js"></script>
+  <script src="js/neuron-strip.js"></script>
+  <script src="js/architecture.js"></script>
+  <script src="js/plot-hover.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+/* Scene 2 — orchestrator layout. Per-panel styles live in their own files
+   (scene2-plot.css, scene2-strip-arch.css, scene2-loss-curve.css). */
+
+.s2-root .hero {
+  margin-bottom: 8px;
+}
+
+/* Two-column row at the top: wide plot card + narrow loss card.
+   On a 1280-viewport stage (max-width 1200, padded 24 each side) we have
+   ~1152px to split. Plot ~ 760, loss ~ 320, with gap. */
+.s2-top-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 8px;
+  align-items: stretch;
+  margin-bottom: 8px;
+}
+
+.s2-plot-card {
+  padding: 8px 12px 4px;
+}
+
+.s2-loss-card {
+  padding: 8px 10px 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.s2-sa-card {
+  padding: 6px 14px 8px;
+  margin: 0 auto 6px;
+  /* Cap the strip + architecture width: their SVGs preserve aspect ratio,
+     so stretching across the full row makes them disproportionately tall
+     and pushes the controls below the 800px fold. */
+  max-width: 760px;
+}
+
+/* Controls row tweaks. */
+.s2-controls {
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+.s2-controls .control-group {
+  /* Slightly wider gap between the button cluster and slider clusters. */
+  gap: 8px;
+}
+
+.s2-controls input[type="range"] {
+  width: 110px;
+}
+
+.s2-seed-input {
+  width: 64px;
+  background: var(--card-bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 12px;
+  font-family: "SF Mono", Menlo, monospace;
+  text-align: right;
+}
+
+.s2-caption {
+  min-height: 1.5em;
+}
+
+/* On narrower stages the loss-curve card drops below the plot card. */
+@media (max-width: 1024px) {
+  .s2-top-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .s2-loss-card {
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

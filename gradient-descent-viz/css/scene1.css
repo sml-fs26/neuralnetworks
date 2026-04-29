@@ -1,0 +1,176 @@
+/* Scene 1 -- "The bowl"
+   Style only. All colors come from the editorial palette tokens defined
+   in css/style.css. No transitions on color/opacity/position (headless
+   screenshot compatibility). */
+
+.s1-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.s1-hero {
+  margin-bottom: 4px;
+}
+
+.s1-h1 {
+  margin-bottom: 6px;
+}
+
+/* Two-column grid for the panels. Falls back to single column on narrow
+   viewports so the marble pane stays clickable on laptops/tablets. */
+.s1-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 880px) {
+  .s1-grid { grid-template-columns: 1fr; }
+}
+
+.s1-pane {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 10px;
+}
+
+.s1-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* Show pointer over the loss pane to invite clicking. The fit pane
+     SVG inherits .s1-svg too -- we only want the cursor there. */
+  cursor: default;
+}
+
+/* Loss pane SVG specifically gets the crosshair cursor (it's the first
+   .s1-svg inside its card; we use a more specific selector). */
+.s1-pane:first-of-type .s1-svg {
+  cursor: crosshair;
+}
+
+.s1-pane-bg {
+  fill: var(--card-bg);
+  stroke: none;
+}
+
+.s1-plot-frame {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+/* ---- Loss-landscape pane ---- */
+
+.s1-contour {
+  fill: none;
+  stroke: var(--contour);
+  stroke-width: 0.7;
+}
+
+.s1-contour-hi {
+  stroke: var(--contour-hi);
+  stroke-width: 1;
+}
+
+.s1-axis {
+  stroke: var(--axis);
+  stroke-width: 1;
+  fill: none;
+}
+
+.s1-tick {
+  stroke: var(--axis);
+  stroke-width: 1;
+}
+
+.s1-tick-label {
+  fill: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.s1-axis-label {
+  fill: var(--ink-secondary);
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.s1-optimum-mark {
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  fill: none;
+}
+
+.s1-trajectory {
+  fill: none;
+  stroke: var(--trajectory);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.s1-marble {
+  fill: var(--marble);
+  stroke: var(--card-bg);
+  stroke-width: 1.2;
+}
+
+/* Hover readout box */
+.s1-hover.hidden {
+  visibility: hidden;
+}
+.s1-hover-bg {
+  fill: var(--card-bg);
+  stroke: var(--rule);
+  stroke-width: 1;
+  fill-opacity: 0.94;
+}
+.s1-hover-text {
+  fill: var(--ink);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Fit pane ---- */
+
+.s1-truth {
+  fill: none;
+  stroke: var(--truth);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+}
+
+.s1-data-pt {
+  fill: var(--data);
+  fill-opacity: 0.55;
+  stroke: none;
+}
+
+.s1-fit {
+  stroke: var(--fit);
+  stroke-width: 2.4;
+  fill: none;
+  stroke-linecap: round;
+}
+
+/* ---- Caption + footnote tightening ---- */
+
+.s1-caption {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.s1-controls {
+  margin-top: 14px;
+}
+
+.s1-foot {
+  margin-top: 8px;
+}

@@ -1,0 +1,95 @@
+/* Scene 2 — Strip + architecture styles. Mirrors demo2's neuron-strip.css
+   and architecture.css; condensed for the live training scene where the
+   panels are smaller and read-only (no hover/focus). */
+
+.s2-strip-caption {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  text-align: center;
+  margin: 0 14px 4px;
+}
+.s2-strip-caption sub { font-size: 0.78em; }
+
+.s2-neuron-strip {
+  position: relative;
+  padding: 0 0;
+  margin-bottom: 2px;
+}
+.s2-strip {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: default;
+  outline: none;
+}
+
+.s2-strip .neuron-dot {
+  fill-opacity: 0.85;
+  stroke: transparent;
+  stroke-width: 0;
+}
+.s2-strip .neuron-dot.fires-right { fill: var(--fires-right); }
+.s2-strip .neuron-dot.fires-left  { fill: var(--fires-left); }
+.s2-strip .neuron-dot.out-of-view { fill-opacity: 0.4; }
+
+.s2-strip .strip-empty-caption {
+  fill: var(--ink-secondary);
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ---- architecture --------------------------------------------------------- */
+
+.s2-architecture {
+  position: relative;
+  padding: 0 0;
+  margin-bottom: 4px;
+}
+.s2-arch {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: default;
+  outline: none;
+}
+
+.s2-arch .io-node {
+  fill: var(--card-bg);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+.s2-arch .io-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  fill: var(--ink);
+  pointer-events: none;
+}
+
+.s2-arch .hidden-node {
+  fill: var(--card-bg);
+  stroke: var(--ink-secondary);
+  stroke-width: 1;
+}
+.s2-arch .hidden-node.fires-right { stroke: var(--fires-right); }
+.s2-arch .hidden-node.fires-left  { stroke: var(--fires-left); }
+.s2-arch .hidden-node.out-of-view { opacity: 0.4; }
+
+.s2-arch .edge-top,
+.s2-arch .edge-bottom {
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+.s2-arch .edge-top.fires-right,
+.s2-arch .edge-bottom.fires-right { stroke: var(--fires-right); }
+.s2-arch .edge-top.fires-left,
+.s2-arch .edge-bottom.fires-left  { stroke: var(--fires-left); }
+.s2-arch .edge-top.out-of-view,
+.s2-arch .edge-bottom.out-of-view { opacity: 0.35; }

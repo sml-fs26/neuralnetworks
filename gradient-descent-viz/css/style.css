@@ -1,0 +1,396 @@
+/* Editorial palette + scene-engine shell. Tokens lifted from demo2-stack-neurons
+   to keep the lecture's visual continuity. */
+:root,
+:root[data-theme="light"] {
+  --bg: #f9f7f1;
+  --ink: #1a1a1a;
+  --ink-secondary: #6b6b6b;
+  --rule: #d8d4ca;
+  --card-bg: #ffffff;
+
+  --fit: #2f6cb1;             /* blue: positive weight / fit / firing highlight */
+  --fires-right: #2f6cb1;
+  --fires-left: #c08a3e;
+  --ghost: #6b6b6b;
+  --focus: #b8323a;            /* deep red, reserved */
+  --truth: #6b6b6b;
+  --data: #1a1a1a;
+  --grid: #ece8de;
+  --axis: #b8b3a6;
+  --guide: #6b6b6b;
+
+  --trajectory: #c08a3e;       /* amber: optimizer marble path */
+  --marble: #b8323a;           /* deep red: the marble itself */
+  --contour: #b8b3a6;          /* loss contour lines */
+  --contour-hi: #6b6b6b;       /* highlighted/major contours */
+}
+
+:root[data-theme="dark"] {
+  --bg: #181612;
+  --ink: #ece7d9;
+  --ink-secondary: #8a8579;
+  --rule: #383530;
+  --card-bg: #211e19;
+
+  --fit: #6ea3dc;
+  --fires-right: #6ea3dc;
+  --fires-left: #d6a766;
+  --ghost: #8a8579;
+  --focus: #d77078;
+  --truth: #8a8579;
+  --data: #ece7d9;
+  --grid: #2a2722;
+  --axis: #4d4942;
+  --guide: #8a8579;
+
+  --trajectory: #d6a766;
+  --marble: #d77078;
+  --contour: #4d4942;
+  --contour-hi: #8a8579;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------------------
+   Topbar
+   --------------------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.topbar .brand { font-weight: 600; }
+.topbar .scene-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-secondary);
+  flex: 1 1 auto;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.topbar .right-cluster { display: flex; gap: 8px; align-items: center; }
+
+.theme-toggle, .pager-btn {
+  background: transparent;
+  color: var(--ink-secondary);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.theme-toggle:hover, .pager-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-secondary);
+}
+.pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+   Stage / scene engine
+   --------------------------------------------------------------------------- */
+
+.stage {
+  position: relative;
+  max-width: 1200px;
+  margin: 16px auto 32px;
+  padding: 0 24px;
+  min-height: calc(100vh - 130px);
+}
+
+.scene {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+}
+.scene.active {
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
+  left: 0;
+  right: 0;
+}
+
+/* Dot pager in the topbar */
+.dot-pager {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.dot-pager .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rule);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.dot-pager .dot.active { background: var(--ink); }
+.dot-pager .dot:hover { background: var(--ink-secondary); }
+
+/* ---------------------------------------------------------------------------
+   Hero block (each scene starts with one)
+   --------------------------------------------------------------------------- */
+
+.hero h1 {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-weight: 500;
+  font-size: 26px;
+  margin: 0 0 4px;
+  letter-spacing: -0.005em;
+}
+
+.hero .subtitle {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink-secondary);
+  margin: 0 0 14px;
+}
+
+/* ---------------------------------------------------------------------------
+   Cards (used by both scenes for content blocks)
+   --------------------------------------------------------------------------- */
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+/* ---------------------------------------------------------------------------
+   Controls (shared)
+   --------------------------------------------------------------------------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  padding: 8px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin-top: 10px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.control-group label {
+  white-space: nowrap;
+}
+
+.control-group input[type="range"] {
+  accent-color: var(--fit);
+  height: 4px;
+  width: 130px;
+}
+
+.control-group output, .control-group .control-value {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  min-width: 36px;
+  text-align: right;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.control-group select, .control-group button {
+  background: var(--card-bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.control-group button:hover, .control-group select:hover {
+  border-color: var(--ink-secondary);
+}
+.control-group button.primary {
+  background: var(--fit);
+  color: white;
+  border-color: var(--fit);
+}
+.control-group button.primary:hover {
+  filter: brightness(1.06);
+}
+
+/* ---------------------------------------------------------------------------
+   Optimizer info (shared between scenes; rendered by js/optimizer-info.js)
+   --------------------------------------------------------------------------- */
+
+.optimizer-info {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  margin: 8px 4px 0;
+  line-height: 1.55;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px 12px;
+}
+
+.optimizer-info .oi-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.optimizer-info .oi-name {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.optimizer-info .oi-fullname {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.optimizer-info .oi-equations {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 8px;
+}
+
+/* Tighten KaTeX display-mode output: kill its default top/bottom margins
+   so multiple equations stack tightly. */
+.optimizer-info .oi-eq .katex-display {
+  margin: 2px 0;
+}
+
+.optimizer-info .oi-where {
+  display: block;
+  font-style: italic;
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 4px 0 6px;
+}
+
+.optimizer-info .oi-where-lab {
+  font-style: italic;
+  color: var(--ink-secondary);
+  margin-right: 8px;
+}
+
+.optimizer-info .oi-var {
+  font-style: normal;
+  display: inline;
+  color: var(--ink);
+}
+
+.optimizer-info .oi-defn {
+  font-style: italic;
+  color: var(--ink-secondary);
+}
+
+.optimizer-info .oi-sep {
+  color: var(--ink-secondary);
+  margin: 0 6px;
+}
+
+.optimizer-info .oi-desc {
+  margin: 6px 0 0;
+  font-style: italic;
+  color: var(--ink-secondary);
+}
+
+/* KaTeX's inline output uses currentColor for most rules, so it picks up
+   --ink automatically. Ensure the math text has the right colour and
+   doesn't inherit italic from a parent. */
+.optimizer-info .katex {
+  font-style: normal;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Caption (italic muted, used by both scenes for the "punchline" line)
+   --------------------------------------------------------------------------- */
+
+.caption {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  margin: 8px 4px 0;
+  min-height: 1.55em;
+}
+
+/* ---------------------------------------------------------------------------
+   Footnote
+   --------------------------------------------------------------------------- */
+
+.footnote {
+  font-size: 11px;
+  color: var(--ink-secondary);
+  border-top: 1px solid var(--rule);
+  padding-top: 8px;
+  margin-top: 14px;
+  text-align: right;
+  font-style: italic;
+}
+
+.footnote kbd {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0 4px;
+  background: var(--card-bg);
+  color: var(--ink);
+  font-style: normal;
+}

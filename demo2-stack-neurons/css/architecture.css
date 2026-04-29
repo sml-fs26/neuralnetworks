@@ -1,0 +1,136 @@
+/* Demo 2 — Network architecture diagram styles.
+
+   Layout space (.architecture padding, #arch-svg width) is reserved in
+   css/style.css so the page does not reflow when this module loads.
+   Here we style the input/output disks, the hidden-row dots, and the
+   signed edges that connect them, plus the cross-component highlight
+   states (focused / firing / dimmed) driven by classes that
+   js/architecture.js applies on every render.
+
+   Strategy: state lives in classes, not inline styles. Inline attrs are
+   only used for positions and stroke-width (since stroke-width varies
+   continuously with weight magnitude and cannot be expressed as a
+   class). No transitions on colour, opacity, position, or stroke-width
+   (per house rules). */
+
+#arch-svg {
+  cursor: default;
+  outline: none;
+}
+
+/* ---- input/output nodes ------------------------------------------------- */
+
+.io-node {
+  fill: var(--card-bg);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.io-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  fill: var(--ink);
+  pointer-events: none;
+}
+
+/* ---- hidden nodes ------------------------------------------------------- */
+
+.hidden-node {
+  cursor: pointer;
+  fill: var(--card-bg);
+  stroke: var(--ink-secondary);
+  stroke-width: 1;
+}
+
+.hidden-node.fires-right { stroke: var(--fires-right); }
+.hidden-node.fires-left  { stroke: var(--fires-left); }
+
+.hidden-node:hover {
+  stroke-width: 1.5;
+}
+
+/* Out-of-view kinks: pinned to viewBox edges, faded but still
+   interactive. */
+.hidden-node.out-of-view {
+  opacity: 0.4;
+}
+
+/* Focused: red ring in the reserved focus colour, slightly thicker.
+   The radius bump is applied inline (r=7) by the JS, so we only style
+   the stroke here. */
+.hidden-node.focused {
+  stroke: var(--focus);
+  stroke-width: 2;
+  opacity: 1;
+}
+
+/* Firing at hovered x: thinner ring in the fit colour. */
+.hidden-node.firing {
+  stroke: var(--fit);
+  stroke-width: 1.6;
+  opacity: 1;
+}
+
+/* When some *other* neuron is focused, this one fades out. */
+.hidden-node.dimmed {
+  opacity: 0.25;
+}
+
+/* ---- edges -------------------------------------------------------------- */
+
+/* Common edge attributes. Stroke-width is set inline by the JS. */
+.edge-top,
+.edge-bottom {
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+
+.edge-top.fires-right,
+.edge-bottom.fires-right { stroke: var(--fires-right); }
+
+.edge-top.fires-left,
+.edge-bottom.fires-left  { stroke: var(--fires-left); }
+
+/* Out-of-view kinks: their connecting edges fade with them. */
+.edge-top.out-of-view,
+.edge-bottom.out-of-view {
+  opacity: 0.35;
+}
+
+/* Highlight states: same priority as the hidden node so all three
+   components flip together. */
+.edge-top.focused,
+.edge-bottom.focused {
+  opacity: 1;
+}
+
+.edge-top.firing,
+.edge-bottom.firing {
+  opacity: 1;
+}
+
+.edge-top.dimmed,
+.edge-bottom.dimmed {
+  opacity: 0.18;
+}
+
+/* ---- linear-regression placeholder -------------------------------------- */
+
+/* Width 0 fallback: a thin neutral connector with an inline italic
+   label sitting just to the right of the line midpoint. */
+.edge-linear {
+  fill: none;
+  stroke: var(--ink-secondary);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.edge-linear-note {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  fill: var(--ink-secondary);
+  pointer-events: none;
+}

@@ -1,0 +1,47 @@
+/* Demo 2 -- Plot hover layer.
+
+   Vertical guide line + readout that follows the cursor across the plot.
+   Owns no transitions on color/opacity/position by design. */
+
+:root,
+:root[data-theme="light"] {
+  --guide: #6b6b6b;
+}
+:root[data-theme="dark"] {
+  --guide: #8a8579;
+}
+
+#plot .hover-guide {
+  pointer-events: none;
+}
+
+#plot .hover-guide-line {
+  stroke: var(--guide);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+
+#plot .hover-guide-dot {
+  fill: var(--fit);
+  stroke: var(--card-bg);
+  stroke-width: 1.5;
+}
+
+#plot .hover-readout-bg {
+  fill: var(--card-bg);
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+#plot .hover-readout-text {
+  fill: var(--ink);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  dominant-baseline: alphabetic;
+}
+
+#plot .hover-readout-text.hover-readout-sub {
+  fill: var(--ink-secondary);
+}
