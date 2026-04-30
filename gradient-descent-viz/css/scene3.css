@@ -1,0 +1,272 @@
+/* Scene 3 -- "Inside the high-D landscape"
+   Style only. All colours come from the editorial palette tokens defined
+   in css/style.css. No transitions on color/opacity/position (headless
+   screenshot compatibility). Mirrors scene1's idiom for visual continuity. */
+
+.s3-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.s3-hero {
+  margin-bottom: 4px;
+}
+
+/* Two-column grid for landscape + fit panes. Falls back to single column
+   on narrower viewports so neither pane gets cramped. */
+.s3-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 880px) {
+  .s3-grid { grid-template-columns: 1fr; }
+}
+
+.s3-pane {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 10px;
+}
+
+.s3-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: default;
+}
+
+/* Crosshair only on the loss-landscape pane to invite the (α, β, L) hover
+   readout. */
+.s3-pane:first-of-type .s3-svg {
+  cursor: crosshair;
+}
+
+.s3-pane-bg {
+  fill: var(--card-bg);
+  stroke: none;
+}
+
+.s3-plot-frame {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+/* ---- Landscape pane ---------------------------------------------------- */
+
+.s3-contour {
+  fill: none;
+  stroke: var(--contour);
+  stroke-width: 0.7;
+}
+
+.s3-contour-hi {
+  stroke: var(--contour-hi);
+  stroke-width: 1;
+}
+
+.s3-axis {
+  stroke: var(--axis);
+  stroke-width: 1;
+  fill: none;
+}
+
+.s3-tick {
+  stroke: var(--axis);
+  stroke-width: 1;
+}
+
+.s3-tick-label {
+  fill: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.s3-axis-label {
+  fill: var(--ink-secondary);
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+}
+
+.s3-optimum-mark {
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  fill: none;
+}
+
+.s3-init-ring {
+  fill: none;
+  stroke: var(--ink-secondary);
+  stroke-width: 1.4;
+}
+
+/* Alternative-minima markers: Adam (the cross at origin) is .s3-optimum-mark.
+   SGD- and Momentum-minima get a smaller "x" cross in the descent-trail
+   colour to read clearly against the contour fills. */
+.s3-altmin-mark {
+  stroke: var(--trajectory);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.s3-marker-label {
+  fill: var(--ink-secondary);
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.s3-trajectory {
+  fill: none;
+  stroke: var(--trajectory);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.s3-marble {
+  fill: var(--marble);
+  stroke: var(--card-bg);
+  stroke-width: 1.2;
+}
+
+/* Hover readout (mirrors scene 1) */
+.s3-hover.hidden {
+  visibility: hidden;
+}
+.s3-hover-bg {
+  fill: var(--card-bg);
+  stroke: var(--rule);
+  stroke-width: 1;
+  fill-opacity: 0.94;
+}
+.s3-hover-text {
+  fill: var(--ink);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Fit pane (right) -------------------------------------------------- */
+
+.s3-truth {
+  fill: none;
+  stroke: var(--truth);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+}
+
+.s3-data-pt {
+  fill: var(--data);
+  fill-opacity: 0.55;
+  stroke: none;
+}
+
+.s3-fit-curve {
+  fill: none;
+  stroke: var(--fit);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* ---- Captions, controls, optimizer-info, math ------------------------- */
+
+.s3-caption {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.s3-controls {
+  margin-top: 14px;
+}
+
+.s3-controls input[type="range"] {
+  width: 110px;
+}
+
+.s3-seed-input {
+  width: 64px;
+  background: var(--card-bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font: inherit;
+  font-size: 12px;
+  font-family: "SF Mono", Menlo, monospace;
+  text-align: right;
+}
+
+.s3-opt-info {
+  margin-top: 10px;
+}
+
+/* Math caption block (KaTeX) */
+.s3-math {
+  margin: 10px 4px 0;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px 12px;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.s3-math .katex {
+  font-style: normal;
+  color: var(--ink);
+}
+
+.s3-eq {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 8px;
+}
+
+.s3-eq .katex-display {
+  margin: 2px 0;
+}
+
+.s3-where {
+  display: block;
+  font-style: italic;
+  color: var(--ink-secondary);
+  font-size: 12.5px;
+  line-height: 1.7;
+  margin: 4px 0 0;
+}
+
+.s3-where-lab {
+  font-style: italic;
+  color: var(--ink-secondary);
+  margin-right: 8px;
+}
+
+.s3-var {
+  font-style: normal;
+  display: inline;
+  color: var(--ink);
+}
+
+.s3-defn {
+  font-style: italic;
+  color: var(--ink-secondary);
+}
+
+.s3-sep {
+  color: var(--ink-secondary);
+}
+
+.s3-status {
+  margin-top: 8px;
+}

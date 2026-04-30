@@ -12,6 +12,8 @@
   const SCENE_TITLES = [
     'Scene 1 · The bowl',
     'Scene 2 · Watch your network train',
+    'Scene 3 · Inside the high-D landscape',
+    'Scene 4 · Local minima & the optimizer zoo',
   ];
 
   const sceneNodes = [];

@@ -64,6 +64,7 @@
   // ---------------- Registry ---------------------------------------------
 
   const OPTIMIZERS = {
+    gd:       { init: sgdInit,      step: sgdStep,      label: 'Gradient Descent (full batch)' },
     sgd:      { init: sgdInit,      step: sgdStep,      label: 'SGD' },
     momentum: { init: momentumInit, step: momentumStep, label: 'SGD + Momentum' },
     adam:     { init: adamInit,     step: adamStep,     label: 'Adam' },

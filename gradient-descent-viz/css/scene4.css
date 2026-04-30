@@ -1,0 +1,282 @@
+/* Scene 4 -- "Local minima & the optimizer zoo"
+   Style only. Colors come from the editorial palette in css/style.css plus
+   four scene-specific tokens defined below for the per-optimizer hue. No
+   transitions on color/opacity/position (headless screenshot compatibility). */
+
+:root,
+:root[data-theme="light"] {
+  --s4-gd:        #2f6cb1;   /* blue (matches existing --fit) */
+  --s4-sgd:       #c08a3e;   /* amber (matches existing --trajectory) */
+  --s4-momentum:  #2f8f5a;   /* green */
+  --s4-adam:      #7a3aa5;   /* purple */
+}
+:root[data-theme="dark"] {
+  --s4-gd:        #6ea3dc;
+  --s4-sgd:       #d6a766;
+  --s4-momentum:  #6fc28e;
+  --s4-adam:      #b483de;
+}
+
+/* ---- Layout ---------------------------------------------------------- */
+
+.s4-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.s4-hero {
+  margin-bottom: 4px;
+}
+
+.s4-h1 {
+  margin-bottom: 6px;
+}
+
+.s4-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 880px) {
+  .s4-grid { grid-template-columns: 1fr; }
+}
+
+.s4-pane {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 10px;
+}
+
+.s4-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: default;
+}
+.s4-svg-curve {
+  cursor: crosshair;
+}
+
+.s4-pane-bg {
+  fill: var(--card-bg);
+  stroke: none;
+}
+
+.s4-plot-frame {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+/* ---- Axes / ticks ----------------------------------------------------- */
+
+.s4-axis {
+  stroke: var(--axis);
+  stroke-width: 1;
+  fill: none;
+}
+
+.s4-tick {
+  stroke: var(--axis);
+  stroke-width: 1;
+}
+
+.s4-tick-label {
+  fill: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.s4-axis-label {
+  fill: var(--ink-secondary);
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* ---- Loss-curve pane -------------------------------------------------- */
+
+.s4-curve {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.s4-theta0 {
+  stroke: var(--ink-secondary);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+
+.s4-traj {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 4 3;
+  fill-opacity: 0;
+}
+
+.s4-traj-gd       { stroke: var(--s4-gd); }
+.s4-traj-sgd      { stroke: var(--s4-sgd); }
+.s4-traj-momentum { stroke: var(--s4-momentum); }
+.s4-traj-adam     { stroke: var(--s4-adam); }
+
+.s4-marble {
+  stroke: var(--card-bg);
+  stroke-width: 1.2;
+}
+.s4-marble.hidden {
+  visibility: hidden;
+}
+
+.s4-marble-gd       { fill: var(--s4-gd); }
+.s4-marble-sgd      { fill: var(--s4-sgd); }
+.s4-marble-momentum { fill: var(--s4-momentum); }
+.s4-marble-adam     { fill: var(--s4-adam); }
+
+/* ---- Loss-vs-step pane ----------------------------------------------- */
+
+.s4-loss-line {
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.s4-loss-line-gd       { stroke: var(--s4-gd); }
+.s4-loss-line-sgd      { stroke: var(--s4-sgd); }
+.s4-loss-line-momentum { stroke: var(--s4-momentum); }
+.s4-loss-line-adam     { stroke: var(--s4-adam); }
+
+.s4-loss-note {
+  fill: var(--ink-secondary);
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+}
+.s4-loss-note.hidden {
+  visibility: hidden;
+}
+
+/* ---- Caption / footnote tightening ----------------------------------- */
+
+.s4-caption {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.s4-controls {
+  margin-top: 14px;
+  row-gap: 10px;
+}
+
+.s4-foot {
+  margin-top: 8px;
+}
+
+/* ---- Optimizer-enable checkboxes ------------------------------------- */
+
+.s4-opt-checks {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.s4-cbwrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.s4-cblabel {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* ---- Color swatches -------------------------------------------------- */
+
+.s4-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  vertical-align: middle;
+}
+.s4-swatch-gd       { background: var(--s4-gd); }
+.s4-swatch-sgd      { background: var(--s4-sgd); }
+.s4-swatch-momentum { background: var(--s4-momentum); }
+.s4-swatch-adam     { background: var(--s4-adam); }
+
+/* ---- Effective-lr legend (right side of controls) -------------------- */
+
+.s4-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.s4-legend-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.s4-legend-text {
+  color: var(--ink);
+}
+
+/* ---- Optimizer-info column (4 cards stacked) ------------------------- */
+
+.s4-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.s4-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.s4-info-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 0;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.s4-info-headlabel {
+  font-style: italic;
+}
+
+.s4-info-body {
+  margin: 0;
+  border-radius: 0 0 4px 4px;
+}

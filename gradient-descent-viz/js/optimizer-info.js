@@ -17,6 +17,29 @@
 
   // Each variable: { tex, defn }. tex is rendered inline, defn is plain HTML.
   const INFO = {
+    gd: {
+      name: 'GD',
+      fullName: 'Gradient Descent (full batch)',
+      equations: [
+        '\\theta_{t+1} \\;=\\; \\theta_t \\;-\\; \\eta \\cdot g_t \\;,\\qquad g_t \\;=\\; \\nabla L(\\theta_t)',
+      ],
+      vars: [
+        { tex: '\\theta_t',    defn: 'parameter vector at step <em>t</em> (the model’s weights)' },
+        { tex: '\\eta',         defn: 'learning rate (a positive scalar; the step size)' },
+        { tex: 'g_t',           defn: 'gradient of the loss <strong>on the full dataset</strong> at the current parameters (no minibatch)' },
+        { tex: '\\nabla L',     defn: 'gradient operator applied to the loss function <em>L</em>, evaluated over every training example' },
+      ],
+      desc:
+        'Plain Gradient Descent computes the <em>exact</em> gradient by summing (or averaging) the per-example ' +
+        'gradient over every training point — no random subsampling. Because there is no stochasticity, the ' +
+        'trajectory is fully deterministic: the same initial θ<sub>0</sub> always produces the same sequence of ' +
+        'iterates. Per step it looks cheap relative to its name, but only when the dataset is small; on large ' +
+        'datasets every single step pays the cost of a full pass through the data, which is why practitioners ' +
+        'reach for SGD instead. <strong>Crucially for our scene:</strong> with no noise, GD simply rolls down the ' +
+        'loss surface to the nearest local minimum and stops. It cannot escape shallow local minima — that ability ' +
+        'to jump out of bad basins is exactly what SGD’s minibatch noise buys you.',
+    },
+
     sgd: {
       name: 'SGD',
       fullName: 'Stochastic Gradient Descent',
