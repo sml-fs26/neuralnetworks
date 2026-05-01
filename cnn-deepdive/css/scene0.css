@@ -1,0 +1,104 @@
+/* Scene 0 — hero. Decorative banner with a looping filter scan.
+   Colors via tokens; no transitions on color/opacity for headless. */
+
+.s0-root { width: 100%; }
+
+.s0-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.s0-hero {
+  margin-bottom: 4px;
+}
+
+.s0-h1 {
+  font-size: 36px;
+  margin: 0 0 8px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.s0-subtitle {
+  font-size: 17px;
+  margin: 0 0 16px;
+}
+
+.s0-lede {
+  font-size: 16.5px;
+  max-width: 64ch;
+  margin: 0;
+}
+
+/* ---- Animated banner ---------------------------------------------------- */
+
+.s0-banner {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  gap: 32px;
+  justify-content: center;
+  align-items: end;
+  padding: 22px 24px 18px;
+}
+
+.s0-banner-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Lock canvas dimensions so headless renders identically. */
+.s0-banner-canvas-host {
+  width: auto;
+  height: auto;
+}
+
+.s0-banner-col:nth-child(1) .s0-banner-canvas-host { width: 110px; height: 110px; }
+.s0-banner-col:nth-child(2) .s0-banner-canvas-host,
+.s0-banner-col:nth-child(3) .s0-banner-canvas-host {
+  width: 280px; height: 280px;
+}
+
+.s0-banner-canvas-host canvas {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.s0-banner-label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-style: normal;
+  color: var(--ink-secondary);
+}
+
+/* ---- Footer cue --------------------------------------------------------- */
+
+.s0-cue {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  margin: 6px 0 0;
+}
+
+.s0-cue kbd {
+  font-family: "SF Mono", Menlo, monospace;
+  font-style: normal;
+  font-size: 11px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0 5px;
+  background: var(--card-bg);
+  color: var(--ink);
+}
+
+/* Narrow-screen fallback. */
+@media (max-width: 800px) {
+  .s0-banner {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}

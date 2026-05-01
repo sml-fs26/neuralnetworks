@@ -1,0 +1,179 @@
+/* Scene 1 — "A filter is a little picture."
+   Three columns: filter library | input + selector | response heatmap. */
+
+.s1c-root { width: 100%; }
+
+.s1c-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s1c-hero { margin-bottom: 4px; }
+.s1c-h1 {
+  font-size: 28px;
+  margin: 0 0 4px;
+}
+.s1c-subtitle {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+
+/* ---- Three-column layout ----------------------------------------------- */
+
+.s1c-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) auto auto;
+  gap: 28px;
+  align-items: start;
+  margin-top: 6px;
+}
+
+.s1c-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.s1c-col-label {
+  font-size: 11px;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-style: normal;
+  color: var(--ink-secondary);
+  align-self: center;
+}
+
+/* ---- Left: filter library --------------------------------------------- */
+
+.s1c-filters-col { align-items: stretch; }
+
+.s1c-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.s1c-filter-card {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 8px 6px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  color: var(--ink);
+  /* No transitions on color/border — headless screenshots must not race. */
+}
+
+.s1c-filter-card:hover {
+  border-color: var(--ink-secondary);
+}
+
+.s1c-filter-card.selected {
+  border-color: var(--cnn-pos);
+  border-width: 2px;
+  /* Compensate for the extra border so layout doesn't shift. */
+  padding: 7px 5px 7px;
+}
+
+.s1c-filter-canvas-host {
+  width: 88px;
+  height: 88px;
+}
+
+.s1c-filter-canvas-host canvas {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.s1c-filter-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.s1c-filter-card.selected .s1c-filter-label {
+  color: var(--cnn-pos);
+}
+
+/* ---- Center: input ----------------------------------------------------- */
+
+.s1c-input-host {
+  width: 308px;
+  height: 308px;
+}
+.s1c-input-host canvas {
+  border-radius: 2px;
+}
+
+.s1c-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.s1c-selector select {
+  background: var(--card-bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.s1c-selector select:hover { border-color: var(--ink-secondary); }
+
+/* ---- Right: response --------------------------------------------------- */
+
+.s1c-resp-host {
+  width: 308px;
+  height: 308px;
+}
+.s1c-resp-host canvas {
+  border-radius: 2px;
+}
+
+.s1c-resp-hint {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+.s1c-resp-hint.hidden { visibility: hidden; }
+
+/* ---- Caption + footnote ------------------------------------------------ */
+
+.s1c-caption {
+  margin-top: 8px;
+  text-align: left;
+}
+
+.s1c-foot { margin-top: 8px; }
+
+/* ---- Narrow viewport fallback ------------------------------------------ */
+
+@media (max-width: 1080px) {
+  .s1c-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 22px;
+  }
+}

@@ -1,0 +1,374 @@
+/* Scene 9 -- "Segmentation -- same machinery, per pixel."
+
+   Layout:
+     hero
+     sample selector (row of 6 thumbnails)
+     U-shape architecture diagram (left enc col / centre bottleneck / right dec col)
+     prediction overlay (input | ground truth | prediction)
+     class legend
+     caption + controls + accuracy footnote */
+
+.s9-root .s9-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s9-hero h1 { font-size: 28px; }
+.s9-hero .lede em {
+  font-style: italic;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Sample selector strip
+   --------------------------------------------------------------------------- */
+
+.s9-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.s9-selector-label {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  flex: 0 0 auto;
+}
+
+.s9-selector-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+.s9-thumb {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 3px;
+  cursor: pointer;
+  transition: border-color 120ms ease-out, transform 120ms ease-out;
+}
+.s9-thumb:hover { border-color: var(--ink-secondary); }
+.s9-thumb.active {
+  border-color: var(--cnn-pos);
+  box-shadow: 0 0 0 2px var(--cnn-pos);
+  transform: translateY(-1px);
+}
+
+.s9-thumb-host { display: block; }
+.s9-thumb canvas { display: block; image-rendering: pixelated; }
+
+/* ---------------------------------------------------------------------------
+   U-shape architecture diagram
+   --------------------------------------------------------------------------- */
+
+.s9-arch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "enc1 .    dec1"
+    "enc2 .    dec2"
+    ".    bot  .";
+  gap: 26px 32px;
+  padding: 110px 12px 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.s9-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.s9-col-enc {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-items: flex-start;
+  padding-left: 8px;
+}
+.s9-col-bot {
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: center;
+  align-self: end;
+}
+.s9-col-dec {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-items: flex-end;
+  padding-right: 8px;
+}
+
+/* Cards (one per U-Net level) */
+.s9-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  opacity: 0.55;
+  transition: opacity 220ms ease-out, border-color 220ms ease-out;
+}
+.s9-card.s9-visible {
+  opacity: 1;
+  border-color: var(--ink-secondary);
+}
+
+.s9-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s9-card-name {
+  font-weight: 600;
+  color: var(--ink);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+}
+.s9-card-sub {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+}
+
+.s9-card-body {
+  position: relative;
+}
+.s9-card-body canvas { display: block; }
+
+/* ---------------------------------------------------------------------------
+   Skip + flow arrows (SVG overlay)
+   --------------------------------------------------------------------------- */
+
+.s9-arrows {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+.s9-arrows svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* Always render SVG content above feature-map cards. SVG has no
+     z-index by default; without this, in some Chrome versions cards
+     with transitions can paint above. */
+  isolation: isolate;
+}
+
+/* Skip-connection arcs: amber, fade in only when the corresponding decoder
+   level is active. */
+.s9-skip-path {
+  stroke: var(--cnn-accent);
+  stroke-width: 4;
+  stroke-dasharray: 14 6;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0;
+  /* No transition: in headless rendering the screenshot can fire mid-fade,
+     and we want the arc fully drawn at step 6+. The fade was nice-to-have;
+     correctness matters more. */
+}
+:root[data-theme="light"] .s9-skip-path {
+  /* Darker amber on cream so the dashes read against the warm light
+     background. The default token is too pale at small line widths. */
+  stroke: #8d5f1f;
+}
+#s9-arrow path { fill: var(--cnn-accent); }
+:root[data-theme="light"] #s9-arrow path { fill: #8d5f1f; }
+
+.s9-skip-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  fill: var(--cnn-accent);
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+
+.s9-arch.s9-skip1-lit .s9-skip1 .s9-skip-path,
+.s9-arch.s9-skip1-lit .s9-skip1 .s9-skip-label,
+.s9-arch.s9-skip2-lit .s9-skip2 .s9-skip-path {
+  opacity: 0.9;
+}
+.s9-arch.s9-skip1-active .s9-skip1 .s9-skip-path,
+.s9-arch.s9-skip2-active .s9-skip2 .s9-skip-path {
+  opacity: 1;
+  stroke-width: 3;
+}
+
+/* Encoder/decoder flow arrows: thinner, ink-coloured, no dashing. */
+.s9-down, .s9-up {
+  stroke: var(--ink-secondary);
+  stroke-width: 1.4;
+  fill: none;
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+.s9-down-label, .s9-up-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  fill: var(--ink-secondary);
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+
+.s9-arch.s9-down1-lit .s9-flow-d1 .s9-down,
+.s9-arch.s9-down1-lit .s9-flow-d1 .s9-down-label {
+  opacity: 0.85;
+}
+.s9-arch.s9-down2-lit .s9-flow-d2 .s9-down,
+.s9-arch.s9-down2-lit .s9-flow-d2 .s9-down-label {
+  opacity: 0.85;
+}
+.s9-arch.s9-up1-lit .s9-flow-u1 .s9-up,
+.s9-arch.s9-up1-lit .s9-flow-u1 .s9-up-label {
+  opacity: 0.85;
+}
+.s9-arch.s9-up2-lit .s9-flow-u2 .s9-up,
+.s9-arch.s9-up2-lit .s9-flow-u2 .s9-up-label {
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------------------
+   Prediction overlay panel
+   --------------------------------------------------------------------------- */
+
+.s9-overlay {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.s9-ov-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.s9-ov-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+
+.s9-ov-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0;
+  background: var(--card-bg);
+}
+.s9-ov-host.s9-visible {
+  border-color: var(--ink-secondary);
+}
+.s9-ov-host canvas { display: block; image-rendering: pixelated; }
+
+/* ---------------------------------------------------------------------------
+   Class legend
+   --------------------------------------------------------------------------- */
+
+.s9-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.s9-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.s9-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  /* The .class-* utility sets `fill`, `stroke`, and `color`. We pull the
+     color into background via currentColor so this stays theme-aware. */
+  background: currentColor;
+  border: 1px solid color-mix(in srgb, currentColor 80%, transparent);
+}
+
+.s9-legend-name {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-transform: lowercase;
+}
+
+/* ---------------------------------------------------------------------------
+   Caption / controls / footnote
+   --------------------------------------------------------------------------- */
+
+.s9-caption {
+  margin: 4px 4px 0;
+  text-align: center;
+  font-size: 14.5px;
+}
+
+.s9-controls {
+  margin-top: 6px;
+}
+
+.s9-acc-note {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.s9-acc-value {
+  font-family: "SF Mono", Menlo, monospace;
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive: at narrower widths drop into a single-column flow.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .s9-overlay {
+    grid-template-columns: 1fr;
+  }
+}

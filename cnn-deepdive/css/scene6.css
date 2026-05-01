@@ -1,0 +1,192 @@
+/* Scene 6 -- "Receptive fields -- the cone of vision."
+   Layer-stack visualisation; the input panel sits at left, then five
+   columns of feature-map tiles, then a readout. An SVG overlay draws
+   the cone from input rect to selected tile. */
+
+.s6-root { width: 100%; }
+
+.s6-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s6-hero { margin-bottom: 4px; }
+
+/* ---- Board: input + 5 layer columns -------------------------------- */
+
+.s6-board {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto repeat(5, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 14px 12px 18px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: var(--card-bg);
+}
+
+.s6-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.s6-cone {
+  fill: var(--cnn-pos);
+  fill-opacity: 0.10;
+  stroke: var(--cnn-pos);
+  stroke-opacity: 0.25;
+  stroke-width: 0.6;
+}
+
+.s6-conn {
+  fill: none;
+  stroke: var(--cnn-pos);
+  stroke-width: 1.2;
+  stroke-opacity: 0.55;
+}
+
+/* ---- Columns ------------------------------------------------------- */
+
+.s6-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.s6-col-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+/* Input column: hero canvas. */
+.s6-col-input { padding-right: 4px; }
+
+.s6-input-host {
+  width: 220px;
+  height: 220px;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+}
+
+.s6-input-caption {
+  text-align: center;
+  font-size: 12.5px;
+  max-width: 220px;
+  margin: 4px 0 0;
+}
+
+/* Layer column: stacked 4 panels, then a caption. */
+.s6-col-layer { min-width: 0; }
+
+.s6-tiles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  width: 100%;
+  max-width: 92px;
+  margin: 0 auto;
+}
+
+.s6-panel {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 4px 4px 14px;
+  cursor: crosshair;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.s6-panel.selected {
+  border-color: var(--cnn-pos);
+  border-width: 2px;
+  padding: 3px 3px 13px;
+}
+
+.s6-panel-canvas {
+  width: 84px;
+  height: 84px;
+}
+
+.s6-panel-tag {
+  position: absolute;
+  bottom: 1px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--ink-secondary);
+  text-transform: uppercase;
+}
+
+.s6-panel.selected .s6-panel-tag { color: var(--cnn-pos); }
+
+.s6-layer-caption {
+  text-align: center;
+  font-size: 12px;
+  margin-top: 4px;
+  max-width: 110px;
+  line-height: 1.35;
+}
+
+/* ---- Readout strip ------------------------------------------------- */
+
+.s6-readout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink);
+  padding: 8px 12px;
+  text-align: center;
+}
+
+.s6-readout-layer {
+  font-weight: 600;
+  color: var(--cnn-pos);
+  letter-spacing: 0.02em;
+}
+
+.s6-readout-cell {
+  color: var(--ink);
+}
+
+.s6-readout-rf {
+  color: var(--ink-secondary);
+}
+
+.s6-readout-sep {
+  color: var(--rule);
+}
+
+.s6-bottom-caption {
+  text-align: center;
+  font-size: 14px;
+  margin-top: 4px;
+  max-width: 60ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---- Narrow viewport fallback -------------------------------------- */
+
+@media (max-width: 1080px) {
+  .s6-board {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .s6-overlay { display: none; }
+}

@@ -2,3 +2,11 @@
 .claude/settings.local.json
 __pycache__/
 *.pyc
+
+# Precompute intermediates: regeneratable from the scripts, oversize for git.
+# The runtime data/datasets.js *is* committed; only the upstream npz/pt/log
+# artifacts that feed the build are excluded.
+cnn-deepdive/precompute/artifacts/
+*.npz
+*.pt
+*.log
