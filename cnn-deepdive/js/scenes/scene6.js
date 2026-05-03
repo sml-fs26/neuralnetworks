@@ -36,6 +36,17 @@
     conv3: 'Sees 24x24 -- almost everything.',
   };
 
+  // Operation per layer — what the network actually does at that step.
+  // Shown above each column so the audience knows the filter / pool
+  // dimensions that produce the cone widening.
+  const LAYER_OPS = {
+    conv1: '5×5 conv · 8 filters · pad 2',
+    pool1: '2×2 max-pool · stride 2',
+    conv2: '5×5 conv · 16 filters · pad 2',
+    pool2: '2×2 max-pool · stride 2',
+    conv3: '3×3 conv · 24 filters · pad 1',
+  };
+
   const INPUT_PX = 220;       // 28 cells * ~7.85 px logical -- hero panel
   const CHANNELS_PER_LAYER = 4;
 
@@ -127,6 +138,10 @@
     LAYERS.forEach((layer) => {
       const col = el('div', { class: 's6-col s6-col-layer' }, board);
       el('div', { class: 's6-col-label', text: layer.label }, col);
+      el('div', {
+        class: 's6-layer-op',
+        text: LAYER_OPS[layer.key],
+      }, col);
       const tiles = el('div', { class: 's6-tiles' }, col);
       el('div', {
         class: 'caption s6-layer-caption',

@@ -140,6 +140,18 @@
   line-height: 1.35;
 }
 
+.s6-layer-op {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  color: var(--ink-secondary);
+  text-align: center;
+  max-width: 130px;
+  line-height: 1.35;
+  margin: -2px 0 2px;
+}
+
 /* ---- Readout strip ------------------------------------------------- */
 
 .s6-readout {

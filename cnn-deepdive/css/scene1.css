@@ -159,6 +159,44 @@
 
 .s1c-resp-hint.hidden { visibility: hidden; }
 
+/* ---- Diverging-palette legend ----------------------------------------- */
+
+.s1c-legend {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 220px;
+  margin-top: 4px;
+}
+
+.s1c-legend-bar-host {
+  width: 220px;
+  height: 14px;
+}
+.s1c-legend-bar-host canvas {
+  border-radius: 2px;
+  display: block;
+}
+
+.s1c-legend-ticks,
+.s1c-legend-words {
+  display: flex;
+  justify-content: space-between;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+  letter-spacing: 0.02em;
+}
+
+.s1c-legend-words {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
 /* ---- Caption + footnote ------------------------------------------------ */
 
 .s1c-caption {

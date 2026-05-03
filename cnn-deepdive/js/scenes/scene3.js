@@ -65,10 +65,12 @@
     return m ? (m[1] != null ? m[1] : true) : null;
   }
 
-  /* Compute conv2d + ReLU. Cached on input shape so re-renders skip work. */
+  /* Raw conv2d. We deliberately do NOT apply ReLU here so the diverging
+     palette shows both red (negative response) and blue (positive
+     response) — keeping the color story consistent with scenes 1 and 2,
+     where the response heatmap was also raw conv output. */
   function computeFmap(input, filter) {
-    const conv = window.CNN.conv2d(input, filter, 2);
-    return window.CNN.relu2D(conv);
+    return window.CNN.conv2d(input, filter, 2);
   }
 
   function symmetricRange(map) {

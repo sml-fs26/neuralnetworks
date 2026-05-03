@@ -177,6 +177,65 @@
   color: var(--ink);
 }
 
+/* ---- Context card ------------------------------------------------------ */
+
+.s8-context {
+  margin-top: 6px;
+  padding: 10px 14px 12px;
+}
+
+.s8-context-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.s8-context-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.s8-context-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-left: 1px solid var(--rule);
+  padding-left: 12px;
+}
+
+.s8-context-block:first-child { border-left: none; padding-left: 0; }
+
+.s8-context-block-title {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  margin-bottom: 3px;
+}
+
+.s8-context-block-line {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+@media (max-width: 1080px) {
+  .s8-context-row { grid-template-columns: 1fr; }
+  .s8-context-block {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--rule);
+    padding-top: 8px;
+  }
+  .s8-context-block:first-child { border-top: none; padding-top: 0; }
+}
+
 /* ---- Footnote ---------------------------------------------------------- */
 
 .s8-footnote {

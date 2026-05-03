@@ -8,19 +8,22 @@
    onNextKey / onPrevKey return true to consume the keystroke (advance internal step),
    false to let the driver advance the scene. */
 (function () {
-  const SCENE_TITLES = [
-    'A convolutional network, end to end',
-    'A filter is a little picture',
-    'The dot product as a match score',
-    'One filter, one feature map',
-    'Stacking filters becomes a unit',
-    'Race the detectors',
-    'Receptive fields — the cone of vision',
-    'Handcrafted vs. learned',
-    'What does this neuron want to see?',
-    'Segmentation — same machinery, per pixel',
-    'What we built',
+  // SCENES is the visible deck. `key` names the registration in
+  // `window.scenes` (kept stable as scene{N}.js so file names don't shift
+  // when we add or drop entries from the deck).
+  const SCENES = [
+    { key: 'scene0',  title: 'A convolutional network, end to end' },
+    { key: 'scene1',  title: 'A filter is a little picture' },
+    { key: 'scene2',  title: 'The dot product as a match score' },
+    { key: 'scene3',  title: 'One filter, one feature map' },
+    { key: 'scene4',  title: 'Stacking filters becomes a unit' },
+    { key: 'scene6',  title: 'Receptive fields — the cone of vision' },
+    { key: 'scene7',  title: 'Handcrafted vs. learned' },
+    { key: 'scene8',  title: 'What does this neuron want to see?' },
+    { key: 'scene9',  title: 'Segmentation — same machinery, per pixel' },
+    { key: 'scene10', title: 'What we built' },
   ];
+  const SCENE_TITLES = SCENES.map(s => s.title);
 
   const sceneNodes = [];
   const sceneState = [];
@@ -87,7 +90,7 @@
       node.dataset.scene = String(idx);
       stage.appendChild(node);
       sceneNodes[idx] = node;
-      const builder = window.scenes && window.scenes['scene' + idx];
+      const builder = window.scenes && window.scenes[SCENES[idx].key];
       if (builder) {
         try {
           sceneState[idx] = builder(node) || {};

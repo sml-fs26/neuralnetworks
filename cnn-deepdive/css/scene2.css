@@ -24,6 +24,91 @@
   margin: 0;
 }
 
+/* ---- Glossary under the formula --------------------------------------- */
+
+.s2c-gloss {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: -2px 0 4px;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.s2c-gloss-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.s2c-gloss-sym {
+  font-family: "KaTeX_Math", "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.s2c-gloss-desc { font-style: italic; }
+
+/* ---- Picker controls -------------------------------------------------- */
+
+.s2c-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 0 6px;
+}
+
+.s2c-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.s2c-picker-group label { white-space: nowrap; }
+
+.s2c-picker-group select {
+  background: var(--card-bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.s2c-picker-group select:hover { border-color: var(--ink-secondary); }
+
+.s2c-fill-btn {
+  background: var(--cnn-pos);
+  color: white;
+  border: 1px solid var(--cnn-pos);
+  border-radius: 3px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.s2c-fill-btn:hover { filter: brightness(1.06); }
+
+/* ---- Clickable input cursor ------------------------------------------- */
+
+.s2c-input-clickable { cursor: crosshair; }
+
 /* ---- Top row: patch × filter = product --------------------------------- */
 
 .s2c-toprow {

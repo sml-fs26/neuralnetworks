@@ -181,10 +181,38 @@
     prevBtn.addEventListener('click', () => selectNeuron(state.idx - 1, true));
     nextBtn.addEventListener('click', () => selectNeuron(state.idx + 1, true));
 
+    // Context card — same network as scene 7 plus AM specifics.
+    const ctxCard = el('div', { class: 's8-context card' }, wrap);
+    el('div', { class: 's8-context-title', text: 'How were these computed?' }, ctxCard);
+    const ctxRow = el('div', { class: 's8-context-row' }, ctxCard);
+
+    function ctxBlock(parent, title, lines) {
+      const block = el('div', { class: 's8-context-block' }, parent);
+      el('div', { class: 's8-context-block-title', text: title }, block);
+      lines.forEach((ln) => {
+        el('div', { class: 's8-context-block-line', text: ln }, block);
+      });
+    }
+
+    ctxBlock(ctxRow, 'network', [
+      'shapelets28 classifier — 99% test accuracy',
+      'conv1 5×5 → 8 / max-pool 2×2',
+      'conv2 5×5 → 16 / max-pool 2×2',
+      'conv3 3×3 → 24 / GAP / linear → 6',
+      'trained: Adam · lr 1e-3 · 30 epochs',
+    ]);
+    ctxBlock(ctxRow, 'activation maximization', [
+      'gradient ascent on the input image (28×28)',
+      'objective: pre-ReLU activation at the spatial',
+      'center of the chosen channel',
+      'Adam · lr 0.1 · 256 steps · TV + L2 reg',
+      'random jitter (±2 px) for spatial robustness',
+    ]);
+
     // Footnote.
     el('p', {
       class: 's8-footnote',
-      text: 'Activation maximization optimizes a single neuron’s pre-ReLU response by gradient ascent on the input image. Total-variation regularization keeps the result interpretable.',
+      text: 'The synthesized image is a real input — the one that excites this single neuron the most under our regularizers. The "top-9 training images" panel shows real shapelets that score highest on the same neuron.',
     }, wrap);
 
     // ---- Drawing helpers ----

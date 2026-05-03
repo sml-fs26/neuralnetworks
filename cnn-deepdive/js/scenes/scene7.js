@@ -170,6 +170,40 @@
     }, navGroup);
     const resetBtn = el('button', { type: 'button', text: 'reset' }, navGroup);
 
+    // ---- How-were-these-learned card ----------------------------------
+    // Pinned context so the audience knows the dataset, architecture, and
+    // optimizer that produced the "learned" filters they're looking at.
+    const ctxCard = el('div', { class: 's7-context card' }, wrap);
+    el('div', { class: 's7-context-title', text: 'How were these learned?' }, ctxCard);
+    const ctxRow = el('div', { class: 's7-context-row' }, ctxCard);
+
+    function ctxBlock(parent, title, lines) {
+      const block = el('div', { class: 's7-context-block' }, parent);
+      el('div', { class: 's7-context-block-title', text: title }, block);
+      lines.forEach((ln) => {
+        el('div', { class: 's7-context-block-line', text: ln }, block);
+      });
+    }
+
+    ctxBlock(ctxRow, 'dataset', [
+      'shapelets28 — 1500 train · 300 test',
+      '6 classes: cross · L · vert / horiz line · circle · triangle',
+      '28×28 grayscale · procedurally generated, random rotation/position/thickness',
+    ]);
+    ctxBlock(ctxRow, 'architecture', [
+      'conv1 5×5 → 8 filters, pad 2 → ReLU',
+      'max-pool 2×2 (stride 2)',
+      'conv2 5×5 → 16 filters, pad 2 → ReLU',
+      'max-pool 2×2 (stride 2)',
+      'conv3 3×3 → 24 filters, pad 1 → ReLU',
+      'global avg-pool · linear → 6 logits',
+    ]);
+    ctxBlock(ctxRow, 'optimizer', [
+      'Adam · lr 1e-3 · batch 64',
+      '30 epochs · cross-entropy loss',
+      'test accuracy ≈ 99%',
+    ]);
+
     // Caption beneath the whole scene.
     const bottomCaption = el('p', { class: 'caption s7-bottom-caption' }, wrap);
 

@@ -1,9 +1,9 @@
 /* Scene 10 — "What we built."
 
-   Coda. A 5×2 grid of takeaway cards summarizing scenes 0..9. Each card
-   has a tiny scene number, a one-line title, an italic one-sentence
-   takeaway, and a small symbolic thumbnail — drawn from DATA so we don't
-   fabricate.
+   Coda. A grid of takeaway cards, one per scene preceding this one.
+   Each card has a tiny scene number, a one-line title, an italic
+   one-sentence takeaway, and a small symbolic thumbnail — drawn from
+   DATA so we don't fabricate.
 
    Click any card → window.CDD.goTo(N).
 
@@ -128,34 +128,8 @@
             { diverging: true, cellBorder: false, valueRange: [-2, 2] });
         }
       },
-      // Scene 5: 6 colored dots — one per shapelets class.
+      // Scene 5 (deck index): cone-of-vision (receptive fields).
       5(ctx, w, h, t) {
-        ctx.fillStyle = t.bg;
-        ctx.fillRect(0, 0, w, h);
-        const cs = getComputedStyle(document.documentElement);
-        const colors = [
-          cs.getPropertyValue('--cnn-pos').trim(),
-          cs.getPropertyValue('--cnn-accent').trim(),
-          cs.getPropertyValue('--cnn-purple').trim(),
-          cs.getPropertyValue('--cnn-green').trim(),
-          cs.getPropertyValue('--cnn-neg').trim(),
-          cs.getPropertyValue('--ink-secondary').trim(),
-        ];
-        const r = 4.5;
-        const cols = 3, rows = 2;
-        const padX = 8, padY = 10;
-        const dx = (w - 2 * padX) / (cols - 1);
-        const dy = (h - 2 * padY) / (rows - 1);
-        for (let i = 0; i < 6; i++) {
-          const c = i % cols, rr = Math.floor(i / cols);
-          ctx.fillStyle = colors[i];
-          ctx.beginPath();
-          ctx.arc(padX + c * dx, padY + rr * dy, r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      },
-      // Scene 6: a small cone-of-vision.
-      6(ctx, w, h, t) {
         ctx.fillStyle = t.bg;
         ctx.fillRect(0, 0, w, h);
         // A trapezoid emanating from the apex.
@@ -183,8 +157,8 @@
         ctx.arc(w / 2, 6, 2, 0, Math.PI * 2);
         ctx.fill();
       },
-      // Scene 7: hand filter beside a learned filter.
-      7(ctx, w, h, t) {
+      // Scene 6 (deck index): hand filter beside a learned filter.
+      6(ctx, w, h, t) {
         ctx.fillStyle = t.bg;
         ctx.fillRect(0, 0, w, h);
         const half = Math.floor(w / 2);
@@ -198,15 +172,15 @@
           diverging: true, cellBorder: false, valueRange: [-1, 1],
         });
       },
-      // Scene 8: the most striking AM image.
-      8(ctx, w, h, t) {
+      // Scene 7 (deck index): the most striking AM image.
+      7(ctx, w, h, t) {
         const img = AM[strikingIdx].image;
         D.drawGrid(ctx, img, 0, 0, w, h, {
           diverging: false, valueRange: [0, 1],
         });
       },
-      // Scene 9: a 5-color gradient strip (segmentation classes).
-      9(ctx, w, h, t) {
+      // Scene 8 (deck index): a 5-color gradient strip (segmentation classes).
+      8(ctx, w, h, t) {
         ctx.fillStyle = t.bg;
         ctx.fillRect(0, 0, w, h);
         const cs = getComputedStyle(document.documentElement);
@@ -243,21 +217,21 @@
     el('h1', { class: 's10-h1', text: 'What we built.' }, hero);
     el('p', {
       class: 'subtitle s10-subtitle',
-      text: 'Ten scenes, one mental model.',
+      text: 'Nine scenes, one mental model.',
     }, hero);
     el('p', {
       class: 'lede s10-lede',
       text: 'From a 5×5 picture to a per-pixel labeled image. Every step used the same machinery.',
     }, hero);
 
-    // Card data — titles match SCENE_TITLES in main.js, takeaways from the brief.
+    // Card data — titles match SCENE_TITLES in main.js (the takeaway scene
+    // itself is the last entry, which we exclude from the grid below).
     const titles = (window.CDD && window.CDD.sceneTitles) || [
       'A convolutional network, end to end',
       'A filter is a little picture',
       'The dot product as a match score',
       'One filter, one feature map',
       'Stacking filters becomes a unit',
-      'Race the detectors',
       'Receptive fields — the cone of vision',
       'Handcrafted vs. learned',
       'What does this neuron want to see?',
@@ -269,7 +243,6 @@
       'The match score is the dot product. Multiply, sum, drop.',
       'Same input, eight different views.',
       'Stack three filters and a unit detects a higher-order pattern.',
-      'Detectors fire in parallel. Each finds its pattern wherever it lives.',
       'Each layer sees a wider patch of the input than the last.',
       'You built one. The network built dozens.',
       'Each neuron has an essence — the input that screams the loudest.',
@@ -278,10 +251,13 @@
 
     const drawers = makeThumbDrawers();
 
-    // Grid.
+    // Grid — one card per scene that precedes this one.
     const grid = el('div', { class: 's10-grid' }, wrap);
     const cardRefs = [];
-    for (let i = 0; i < 10; i++) {
+    const N_CARDS = (window.CDD && window.CDD.sceneTitles)
+      ? Math.max(0, window.CDD.sceneTitles.length - 1)
+      : takeaways.length;
+    for (let i = 0; i < N_CARDS; i++) {
       const card = el('button', { class: 's10-card', type: 'button',
         'aria-label': `Go to scene ${i}: ${titles[i]}` }, grid);
       el('div', { class: 's10-card-num', text: `scene ${String(i).padStart(2, '0')}` }, card);

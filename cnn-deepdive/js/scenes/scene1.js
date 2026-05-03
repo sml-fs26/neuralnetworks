@@ -112,6 +112,18 @@
     const respHost = el('div', { class: 'canvas-host s1c-resp-host' }, rightCol);
     const respHint = el('p', { class: 's1c-resp-hint', text: 'click a filter →' }, rightCol);
 
+    // Diverging-palette legend so the audience can decode colors.
+    const legend = el('div', { class: 's1c-legend' }, rightCol);
+    const legendBarHost = el('div', { class: 'canvas-host s1c-legend-bar-host' }, legend);
+    const legendTicks = el('div', { class: 's1c-legend-ticks' }, legend);
+    el('span', { text: '−1' }, legendTicks);
+    el('span', { text: '0' }, legendTicks);
+    el('span', { text: '+1' }, legendTicks);
+    const legendWords = el('div', { class: 's1c-legend-words' }, legend);
+    el('span', { text: 'opposite' }, legendWords);
+    el('span', { text: 'indifferent' }, legendWords);
+    el('span', { text: 'match' }, legendWords);
+
     // ----- Caption ---------------------------------------------------------
     const caption = el('p', { class: 'caption s1c-caption' }, wrap);
     caption.textContent =
@@ -128,6 +140,8 @@
     // ----- Canvas setup ----------------------------------------------------
     const ic = window.Drawing.setupCanvas(inputHost, FIELD_PX, FIELD_PX);
     const rc = window.Drawing.setupCanvas(respHost, FIELD_PX, FIELD_PX);
+    const LEGEND_W = 220, LEGEND_H = 14;
+    const lc = window.Drawing.setupCanvas(legendBarHost, LEGEND_W, LEGEND_H);
     // Lazy: filter cards each get their own small canvas, created below.
 
     // ----- State -----------------------------------------------------------
@@ -251,6 +265,22 @@
       rc.ctx.strokeRect(0.5, 0.5, FIELD_PX - 1, FIELD_PX - 1);
     }
 
+    function drawLegend() {
+      const t = window.Drawing.tokens();
+      lc.ctx.fillStyle = t.bg;
+      lc.ctx.fillRect(0, 0, LEGEND_W, LEGEND_H);
+      // Paint the diverging palette as a horizontal gradient.
+      const N = LEGEND_W;
+      for (let x = 0; x < N; x++) {
+        const v = (x / (N - 1)) * 2 - 1; // -1 .. +1
+        lc.ctx.fillStyle = window.Drawing.divergingColor(v, t);
+        lc.ctx.fillRect(x, 0, 1, LEGEND_H);
+      }
+      lc.ctx.lineWidth = 1;
+      lc.ctx.strokeStyle = t.rule;
+      lc.ctx.strokeRect(0.5, 0.5, LEGEND_W - 1, LEGEND_H - 1);
+    }
+
     function refreshFilterCardSelection() {
       const cards = filterGrid.querySelectorAll('.s1c-filter-card');
       cards.forEach((c) => {
@@ -273,6 +303,7 @@
     function fullRender() {
       drawInput();
       drawResponse();
+      drawLegend();
       refreshFilterCardSelection();
       refreshHint();
     }
