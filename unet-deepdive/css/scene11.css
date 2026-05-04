@@ -1,7 +1,10 @@
-/* Scene 11 — "The U-Net, fully wired."
-   Reuses the U-shape diagram pattern from cnn-deepdive scene9 but with
-   full edge labels, an extra input card on the left, and an output card
-   on the right. Hover state reveals KaTeX formulas via a floating tooltip. */
+/* Scene 11 — "The U-Net, fully wired." (Reference / answer-key card.)
+
+   Structurally identical to scene 0's stylesheet; classes are prefixed
+   s11-. The reference card has bookends, hover sidebar, and landmark
+   labels visible from initial render — no progressive reveal classes
+   are needed for the labels themselves, but we keep the .s11-show-*
+   selectors so the markup matches scene 0 (and so the sweep dim works). */
 
 .s11-root .s11-wrap {
   display: flex;
@@ -13,10 +16,10 @@
 .s11-hero .lede em { font-style: italic; color: var(--ink); }
 
 /* ---------------------------------------------------------------------------
-   Sample selector + play button
+   Sample / play controls
    --------------------------------------------------------------------------- */
 
-.s11-selector {
+.s11-controls-top {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -24,7 +27,13 @@
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
 }
-.s11-selector-label {
+.s11-sample-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.s11-control-label {
   font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -49,8 +58,8 @@
   border-color: var(--cnn-pos);
   color: white;
 }
-.s11-selector-spacer { flex: 1 1 auto; }
 .s11-play-btn {
+  margin-left: auto;
   background: var(--cnn-pos);
   color: white;
   border: 1px solid var(--cnn-pos);
@@ -65,256 +74,361 @@
 .s11-play-btn:hover { filter: brightness(1.06); }
 
 /* ---------------------------------------------------------------------------
-   The architecture diagram
+   The architecture container
    --------------------------------------------------------------------------- */
 
 .s11-arch {
   position: relative;
   display: grid;
-  /* 5 columns: input | encoder | bottleneck | decoder | output */
-  grid-template-columns: auto 1fr 1fr 1fr auto;
-  grid-template-rows: auto auto auto;
-  grid-template-areas:
-    "in   enc1 .    dec1 out"
-    ".    enc2 .    dec2 ."
-    ".    .    bot  .    .";
-  gap: 24px 28px;
-  padding: 110px 14px 22px;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 14px;
+  align-items: start;
+  padding: 14px;
   background: var(--card-bg);
   border: 1px solid var(--rule);
   border-radius: 4px;
 }
 
-.s11-col {
+.s11-svg-host {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-color: var(--rule) transparent;
+}
+
+.s11-svg {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+   Bars
+   --------------------------------------------------------------------------- */
+
+.s11-bar-act {
+  fill: var(--cnn-pos);
+  fill-opacity: 0.78;
+}
+.s11-bar-input {
+  fill: var(--cnn-pos);
+  fill-opacity: 0.5;
+}
+.s11-bar-output {
+  fill: var(--cnn-accent);
+  fill-opacity: 0.92;
+}
+
+.s11-bar-up {
+  fill: var(--cnn-pos);
+  fill-opacity: 0.78;
+}
+.s11-bar-skip {
+  fill: var(--cnn-accent);
+  fill-opacity: 0.78;
+}
+
+.s11-bar-outline {
+  fill: none;
+  stroke: var(--ink);
+  stroke-opacity: 0.55;
+  stroke-width: 1;
+}
+
+.s11-bar-group.s11-bar-hover .s11-bar-outline {
+  stroke: var(--ink);
+  stroke-opacity: 1;
+  stroke-width: 2;
+}
+.s11-bar-group.s11-bar-hover .s11-bar,
+.s11-bar-group.s11-bar-hover .s11-bar-up,
+.s11-bar-group.s11-bar-hover .s11-bar-skip { fill-opacity: 1; }
+
+/* Sweep state — only active while the play sweep is running, then it
+   releases and the diagram returns to its default fully-lit reference
+   appearance. */
+.s11-arch.s11-show-sweep .s11-bar-group .s11-bar,
+.s11-arch.s11-show-sweep .s11-bar-group .s11-bar-up,
+.s11-arch.s11-show-sweep .s11-bar-group .s11-bar-skip {
+  fill-opacity: 0.18;
+  transition: fill-opacity 220ms ease-out;
+}
+.s11-arch.s11-show-sweep .s11-bar-group.s11-bar-sweep .s11-bar,
+.s11-arch.s11-show-sweep .s11-bar-group.s11-bar-sweep .s11-bar-up,
+.s11-arch.s11-show-sweep .s11-bar-group.s11-bar-sweep .s11-bar-skip {
+  fill-opacity: 0.78;
+}
+.s11-arch.s11-show-sweep .s11-bar-group.s11-bar-sweep-active .s11-bar,
+.s11-arch.s11-show-sweep .s11-bar-group.s11-bar-sweep-active .s11-bar-up,
+.s11-arch.s11-show-sweep .s11-bar-group.s11-bar-sweep-active .s11-bar-skip {
+  fill-opacity: 1;
+}
+.s11-arch.s11-show-sweep .s11-bar-group.s11-bar-sweep-active .s11-bar-outline {
+  stroke-width: 2;
+  stroke-opacity: 1;
+}
+
+.s11-bar-hit { cursor: pointer; }
+
+/* ---------------------------------------------------------------------------
+   Numeric labels
+   --------------------------------------------------------------------------- */
+
+.s11-label-channels {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+.s11-label-spatial {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  fill: var(--ink-secondary);
+}
+.s11-label-annot {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 10.5px;
+  fill: var(--ink-secondary);
+}
+
+.s11-arrow-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+  fill: var(--ink-secondary);
+}
+
+/* Landmark annotations: reference-card-only labels next to the four
+   important arrow types. Tinted to match each op's color so the
+   association reads at a glance. */
+.s11-landmark {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+  font-weight: 600;
+  paint-order: stroke fill;
+  stroke: var(--card-bg);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.s11-landmark-pool    { fill: #c95a5a; }
+.s11-landmark-upconv  { fill: #9067c2; }
+.s11-landmark-onexone { fill: #3a8fb7; }
+.s11-landmark-skip    { fill: var(--ink-secondary); }
+:root[data-theme="dark"] .s11-landmark-pool    { fill: #e07a7a; }
+:root[data-theme="dark"] .s11-landmark-upconv  { fill: #b08adb; }
+:root[data-theme="dark"] .s11-landmark-onexone { fill: #6fb6d6; }
+
+/* ---------------------------------------------------------------------------
+   Operation arrows
+   --------------------------------------------------------------------------- */
+
+.s11-arrow {
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  fill: none;
+}
+.s11-arrow-conv     { stroke: #5aa64a; }
+.s11-arrow-pool     { stroke: #c95a5a; stroke-width: 1.8; }
+.s11-arrow-upconv   { stroke: #9067c2; stroke-width: 1.8; }
+.s11-arrow-onexone  { stroke: #3a8fb7; stroke-width: 1.8; }
+.s11-arrow-argmax   { stroke: var(--ink-secondary); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.s11-arrow-concat {
+  stroke: #7d776c;
+  stroke-width: 1.6;
+  opacity: 0.9;
+}
+:root[data-theme="dark"] .s11-arrow-concat { stroke: #a09a8d; }
+.s11-arrow-skip {
+  stroke: var(--ink-secondary);
+  stroke-width: 1.6;
+  stroke-dasharray: 6 4;
+  opacity: 0.85;
+}
+
+:root[data-theme="dark"] .s11-arrow-conv    { stroke: #7bc070; }
+:root[data-theme="dark"] .s11-arrow-pool    { stroke: #e07a7a; }
+:root[data-theme="dark"] .s11-arrow-upconv  { stroke: #b08adb; }
+:root[data-theme="dark"] .s11-arrow-onexone { stroke: #6fb6d6; }
+
+/* ---------------------------------------------------------------------------
+   Bookends — visible from the start (no fade-in delay).
+   --------------------------------------------------------------------------- */
+
+.s11-bookend {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-}
-.s11-col-in  { grid-area: in;   align-self: start; padding-top: 6px; }
-.s11-col-enc { grid-column: 2; grid-row: 1 / span 2; align-items: flex-start; padding-left: 4px; }
-.s11-col-bot { grid-column: 3; grid-row: 3; justify-self: center; align-self: end; }
-.s11-col-dec { grid-column: 4; grid-row: 1 / span 2; align-items: flex-end; padding-right: 4px; }
-.s11-col-out { grid-area: out;  align-self: start; padding-top: 6px; }
-
-/* Cards */
-.s11-card {
-  display: flex;
-  flex-direction: column;
   gap: 4px;
-  padding: 8px 10px;
-  background: var(--bg);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  transition: border-color 220ms ease-out, box-shadow 220ms ease-out;
-}
-
-.s11-card-head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-secondary);
-}
-.s11-card-name {
-  font-weight: 600;
-  color: var(--ink);
-  font-family: "SF Mono", Menlo, monospace;
-  font-size: 11px;
-}
-.s11-card-sub {
-  font-style: italic;
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 11px;
-}
-
-.s11-card-body { position: relative; }
-.s11-card-body canvas { display: block; image-rendering: pixelated; }
-
-.s11-arch.s11-show-node-labels .s11-card { border-color: var(--ink-secondary); }
-.s11-arch.s11-hover-on .s11-card { cursor: help; }
-.s11-arch.s11-hover-on .s11-card:hover {
-  border-color: var(--cnn-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cnn-accent) 35%, transparent);
-}
-
-/* Sweep highlight (during "play forward") */
-.s11-card.s11-sweep {
-  border-color: var(--cnn-pos);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cnn-pos) 50%, transparent);
-}
-
-/* ---------------------------------------------------------------------------
-   SVG overlay (arrows + labels)
-   --------------------------------------------------------------------------- */
-
-.s11-arrows {
-  position: absolute;
-  inset: 0;
   pointer-events: none;
-  z-index: 2;
-  overflow: visible;
-}
-.s11-arrows svg {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  isolation: isolate;
-}
-
-/* The wide hit area for skip arcs is interactive; the visible path is not. */
-.s11-edge-hit { pointer-events: stroke; cursor: help; }
-.s11-arch:not(.s11-hover-on) .s11-edge-hit { pointer-events: none; }
-
-/* Skip arcs: amber, dashed. */
-.s11-skip-path {
-  stroke: var(--cnn-accent);
-  stroke-width: 4;
-  stroke-dasharray: 14 6;
-  stroke-linecap: round;
-  fill: none;
-  opacity: 0.95;
-}
-:root[data-theme="light"] .s11-skip-path { stroke: #8d5f1f; }
-
-#s11-arrow path { fill: var(--cnn-accent); }
-:root[data-theme="light"] #s11-arrow path { fill: #8d5f1f; }
-
-.s11-arch.s11-hover-on .s11-skip:hover .s11-skip-path {
-  stroke-width: 5;
-  filter: brightness(1.1);
-}
-
-/* Down/up flow arrows: thinner, ink-coloured. */
-.s11-down, .s11-up, .s11-head-path {
-  stroke: var(--ink-secondary);
-  stroke-width: 1.6;
-  fill: none;
-  opacity: 0.95;
-}
-.s11-head-path { stroke-width: 1.8; }
-
-/* Edge labels: italic serif, fade in only when step >= 1. */
-.s11-edge-label {
-  font-family: "Iowan Old Style", Palatino, Georgia, serif;
-  font-style: italic;
-  font-size: 12.5px;
-  fill: var(--ink-secondary);
+  /* The reference card paints the bookends already opaque so there is
+     no "press step 1 to reveal" delay. The .s11-show-bookends class
+     is set by JS at construction; we still gate visibility on it for
+     parity with scene 0. */
   opacity: 0;
-  transition: opacity 240ms ease-out;
-  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 320ms ease-out, transform 320ms ease-out;
 }
-.s11-skip-label { fill: var(--cnn-accent); }
-:root[data-theme="light"] .s11-skip-label { fill: #8d5f1f; }
-
-.s11-arch.s11-show-edge-labels .s11-edge-label { opacity: 0.95; }
-
-/* ---------------------------------------------------------------------------
-   Tooltip (KaTeX-rendered)
-   --------------------------------------------------------------------------- */
-
-.s11-tooltip {
-  position: fixed;
-  z-index: 50;
-  max-width: 380px;
-  background: var(--card-bg);
+.s11-arch.s11-show-bookends .s11-bookend {
+  opacity: 1;
+  transform: translateY(0);
+}
+.s11-bookend-canvas {
   border: 1px solid var(--ink-secondary);
-  border-radius: 6px;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
-  padding: 10px 14px;
-  pointer-events: none;
-  font-size: 13px;
-  color: var(--ink);
+  border-radius: 3px;
+  background: var(--card-bg);
+  overflow: hidden;
 }
-.s11-tt-head {
+.s11-bookend-canvas canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.s11-bookend-label {
   font-family: "Iowan Old Style", Palatino, Georgia, serif;
   font-style: italic;
-  font-size: 14px;
-  color: var(--ink);
-  margin-bottom: 4px;
-}
-.s11-tt-shape {
-  font-family: "SF Mono", Menlo, monospace;
-  font-size: 11px;
-  color: var(--cnn-pos);
-  margin-bottom: 6px;
-  letter-spacing: 0.02em;
-}
-.s11-tt-op {
+  font-size: 10.5px;
   color: var(--ink-secondary);
-  font-size: 12.5px;
-  line-height: 1.4;
-  margin-bottom: 8px;
 }
-.s11-tt-formula {
-  border-top: 1px dashed var(--rule);
-  padding-top: 8px;
-  text-align: center;
-  overflow-x: auto;
-}
-.s11-tt-formula .katex { font-size: 1.05em; color: var(--ink); }
 
 /* ---------------------------------------------------------------------------
-   Class legend
+   Legend
    --------------------------------------------------------------------------- */
 
 .s11-legend {
+  position: absolute;
   display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  padding: 6px;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+  flex-direction: column;
+  gap: 4px;
+  padding: 7px 9px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  z-index: 3;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
-.s11-legend-item {
-  display: inline-flex;
+.s11-legend-title {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  margin-bottom: 2px;
+}
+.s11-legend-row {
+  display: flex;
   align-items: center;
   gap: 6px;
-}
-.s11-swatch {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 2px;
-  background: currentColor;
-  border: 1px solid color-mix(in srgb, currentColor 80%, transparent);
-}
-.s11-legend-name {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--ink);
-  text-transform: lowercase;
-  letter-spacing: 0.04em;
+}
+.s11-legend-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.s11-legend-swatch.lg-conv    { background: #5aa64a; }
+.s11-legend-swatch.lg-pool    { background: #c95a5a; }
+.s11-legend-swatch.lg-upconv  { background: #9067c2; }
+.s11-legend-swatch.lg-skip {
+  background: transparent;
+  border-top: 2px dashed var(--ink-secondary);
+  height: 0;
+  margin-top: 2px;
+}
+.s11-legend-swatch.lg-onexone { background: #3a8fb7; }
+.s11-legend-swatch.lg-argmax {
+  background: transparent;
+  border-top: 2px dashed var(--ink-secondary);
+  height: 0;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+:root[data-theme="dark"] .s11-legend-swatch.lg-conv    { background: #7bc070; }
+:root[data-theme="dark"] .s11-legend-swatch.lg-pool    { background: #e07a7a; }
+:root[data-theme="dark"] .s11-legend-swatch.lg-upconv  { background: #b08adb; }
+:root[data-theme="dark"] .s11-legend-swatch.lg-onexone { background: #6fb6d6; }
+
+/* ---------------------------------------------------------------------------
+   Hover sidebar (right rail) — always live in scene 11.
+   --------------------------------------------------------------------------- */
+
+.s11-sidebar {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  min-height: 220px;
+  /* No dimmed-state in scene 11: the sidebar is fully active from
+     initial paint because there is no progressive reveal. */
+  opacity: 1;
 }
 
-.s11-caption {
-  margin: 4px 4px 0;
+.s11-sb-head { display: flex; flex-direction: column; gap: 2px; }
+.s11-sb-name {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.s11-sb-op {
+  font-size: 11.5px;
+  color: var(--ink-secondary);
+}
+.s11-sb-shape {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink);
+  padding: 4px 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+.s11-sb-shape-label {
+  color: var(--ink-secondary);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+.s11-sb-preview-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+.s11-sb-preview {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.s11-sb-preview canvas { display: block; image-rendering: pixelated; }
+.s11-sb-preview-subtitle {
   text-align: center;
-  font-size: 14.5px;
+  font-style: italic;
+  font-size: 10.5px;
+  color: var(--ink-secondary);
+}
+.s11-sb-hint {
+  font-size: 11px;
+  color: var(--ink-secondary);
+  font-style: italic;
+  text-align: center;
 }
 
 /* ---------------------------------------------------------------------------
-   Responsive: at narrower widths drop input/output to their own row.
+   Caption / step controls
    --------------------------------------------------------------------------- */
 
-@media (max-width: 1100px) {
-  .s11-arch {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-areas:
-      "in   .    out"
-      "enc1 .    dec1"
-      "enc2 .    dec2"
-      ".    bot  .";
-  }
-  .s11-col-in  { grid-area: in; }
-  .s11-col-out { grid-area: out; }
-  .s11-col-enc { grid-column: 1; grid-row: 2 / span 2; }
-  .s11-col-bot { grid-column: 2; grid-row: 4; }
-  .s11-col-dec { grid-column: 3; grid-row: 2 / span 2; }
+.s11-caption {
+  margin: 4px 4px 0;
+  font-size: 14px;
 }
+
+.s11-controls { margin-top: 6px; }

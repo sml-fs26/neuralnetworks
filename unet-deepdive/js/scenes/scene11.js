@@ -1,39 +1,149 @@
 /* Scene 11 — "The U-Net, fully wired."
 
-   Synthesis scene. The same U-shape we have grown across the deepdive,
-   now annotated on every edge with shape (H × W × C) and on every node
-   with the operation it performs. Hover any node to see its formula
-   (KaTeX). Hover any skip arc to see the concat arithmetic. A "play
-   forward" button sweeps a real input through the architecture.
+   The reference / answer-key card. Same Ronneberger-style per-tensor
+   diagram as scene 0, but presented in its fully-wired final state from
+   the very first paint: bookends visible, hover sidebar enabled, sample
+   picker active, and four landmark arrow labels (pool, transposed conv,
+   1×1 conv, skip concat) annotated next to the corresponding edges.
 
-   Reuses the U-shape skeleton + layoutArrows + makeLevelCard pattern
-   from cnn-deepdive scene9 (which is also where the painters were
-   promoted from into js/drawing.js). The new bits: full edge labels,
-   per-node hover with KaTeX formulas, per-skip hover with concat math,
-   "play forward" sweep across all 6 stages.
+   No progressive reveal. The play-forward sweep is still available as a
+   one-shot replay of the data-flow animation.
 
-   Step engine:
-     0 = static diagram, blank cards, no labels
-     1 = shape labels appear on edges
-     2 = operation labels on nodes
-     3 = hover mode enabled
-     4 = "play forward" sweep (auto)
-*/
+   Step engine: a single step (NUM_STEPS = 1). The diagram starts fully
+   wired. The play button replays the sweep without changing any reveal
+   state.
+
+   Reads:
+     window.DATA.scene64.samples[0..5]  (input/label/pred + 4-channel previews)
+     window.DATA.scene64.classes
+     window.Drawing.{paintRGB, paintLabelMap, paintFeatureCard,
+                      setupCanvas, tokens} */
 (function () {
   'use strict';
 
-  const NUM_STEPS = 5;
-  const RUN_INTERVAL_MS = 700;
-  const SWEEP_STEP_MS = 600;
+  const NUM_STEPS = 1;
+  const SWEEP_STEP_MS = 500;      // tensor-to-tensor in the play sweep
+  const BOOKEND_PX = 84;
 
-  const CLASS_NAMES = ['sky', 'grass', 'sun', 'tree', 'person'];
+  /* Bar geometry --------------------------------------------------- */
+  const BAR_HEIGHT_BASE = 180;          // px at spatial=64
+  const BAR_WIDTH_BASE = 6;             // px constant
+  const BAR_WIDTH_PER_CHANNEL = 0.42;   // px per channel
+  function barWidth(channels)  { return BAR_WIDTH_BASE + BAR_WIDTH_PER_CHANNEL * channels; }
+  function barHeight(spatial)  { return BAR_HEIGHT_BASE * (spatial / 64); }
 
-  const LEVEL1_PX = 132;
-  const LEVEL2_PX = 100;
-  const LEVEL3_PX = 80;
-  const OUTPUT_PX = 132;
-  const INPUT_PX  = 132;
+  /* Op color palette (theme-agnostic; chosen to be legible in light & dark) */
+  const OP_COLORS = {
+    conv:    '#5aa64a', // green: conv 3x3 + ReLU
+    pool:    '#c95a5a', // red: max-pool 2x2
+    upconv:  '#9067c2', // purple: transposed conv 2x2
+    skip:    null,      // gray
+    onexone: '#3a8fb7', // blue: 1x1 conv
+  };
 
+  /* All 19 tensors. Same list as scene 0; order = execution order. */
+  const TENSORS = [
+    { id: 't0',  name: 'input',          row: 1, spatial: 64, channels: 3,  op: '(input)',                 short: 'input',   preview: null    },
+    { id: 't1',  name: 'enc1.conv1 out', row: 1, spatial: 64, channels: 16, op: 'conv 3×3 + ReLU',         short: 'e1c1',    preview: null    },
+    { id: 't2',  name: 'enc1.conv2 out', row: 1, spatial: 64, channels: 16, op: 'conv 3×3 + ReLU',         short: 'e1c2',    preview: 'enc1'  },
+    { id: 't3',  name: 'pool1 out',      row: 2, spatial: 32, channels: 16, op: 'max-pool 2×2',            short: 'pool1',   preview: null    },
+    { id: 't4',  name: 'enc2.conv1 out', row: 2, spatial: 32, channels: 32, op: 'conv 3×3 + ReLU',         short: 'e2c1',    preview: null    },
+    { id: 't5',  name: 'enc2.conv2 out', row: 2, spatial: 32, channels: 32, op: 'conv 3×3 + ReLU',         short: 'e2c2',    preview: 'enc2'  },
+    { id: 't6',  name: 'pool2 out',      row: 3, spatial: 16, channels: 32, op: 'max-pool 2×2',            short: 'pool2',   preview: null    },
+    { id: 't7',  name: 'enc3.conv1 out', row: 3, spatial: 16, channels: 64, op: 'conv 3×3 + ReLU',         short: 'e3c1',    preview: null    },
+    { id: 't8',  name: 'enc3.conv2 out', row: 3, spatial: 16, channels: 64, op: 'conv 3×3 + ReLU',         short: 'e3c2',    preview: 'enc3', annotate: 'bottleneck' },
+    { id: 't9',  name: 'up2 out',        row: 2, spatial: 32, channels: 32, op: 'transposed conv 2×2',     short: 'up2',     preview: null    },
+    { id: 't10', name: 'concat(up2, e2c2)', row: 2, spatial: 32, channels: 64, op: 'concat (channel)',     short: 'cat2',    preview: null, annotate: 'concat',   split: true },
+    { id: 't11', name: 'dec2.conv1 out', row: 2, spatial: 32, channels: 32, op: 'conv 3×3 + ReLU',         short: 'd2c1',    preview: null    },
+    { id: 't12', name: 'dec2.conv2 out', row: 2, spatial: 32, channels: 32, op: 'conv 3×3 + ReLU',         short: 'd2c2',    preview: 'dec2'  },
+    { id: 't13', name: 'up1 out',        row: 1, spatial: 64, channels: 16, op: 'transposed conv 2×2',     short: 'up1',     preview: null    },
+    { id: 't14', name: 'concat(up1, e1c2)', row: 1, spatial: 64, channels: 32, op: 'concat (channel)',     short: 'cat1',    preview: null, annotate: 'concat',   split: true },
+    { id: 't15', name: 'dec1.conv1 out', row: 1, spatial: 64, channels: 16, op: 'conv 3×3 + ReLU',         short: 'd1c1',    preview: null    },
+    { id: 't16', name: 'dec1.conv2 out', row: 1, spatial: 64, channels: 16, op: 'conv 3×3 + ReLU',         short: 'd1c2',    preview: 'dec1'  },
+    { id: 't17', name: 'logits',         row: 1, spatial: 64, channels: 5,  op: 'conv 1×1',                short: 'logits',  preview: null    },
+    { id: 't18', name: 'output (argmax)',row: 1, spatial: 64, channels: 1,  op: 'argmax + softmax',        short: 'output',  preview: null, annotate: 'output (argmax)' },
+  ];
+
+  /* Operation edges between consecutive tensors. */
+  const OPS = [
+    { from: 0,  to: 1,  type: 'conv'    },
+    { from: 1,  to: 2,  type: 'conv'    },
+    { from: 2,  to: 3,  type: 'pool',   landmark: 'max-pool, /2' },
+    { from: 3,  to: 4,  type: 'conv'    },
+    { from: 4,  to: 5,  type: 'conv'    },
+    { from: 5,  to: 6,  type: 'pool',   landmark: 'max-pool, /2' },
+    { from: 6,  to: 7,  type: 'conv'    },
+    { from: 7,  to: 8,  type: 'conv'    },
+    { from: 8,  to: 9,  type: 'upconv', landmark: 'transposed conv, ×2' },
+    { from: 9,  to: 10, type: 'concat-merge' },
+    { from: 10, to: 11, type: 'conv'    },
+    { from: 11, to: 12, type: 'conv'    },
+    { from: 12, to: 13, type: 'upconv', landmark: 'transposed conv, ×2' },
+    { from: 13, to: 14, type: 'concat-merge' },
+    { from: 14, to: 15, type: 'conv'    },
+    { from: 15, to: 16, type: 'conv'    },
+    { from: 16, to: 17, type: 'onexone', landmark: '1×1 conv → 5 classes' },
+    { from: 17, to: 18, type: 'argmax'  },
+  ];
+
+  /* Skip connections. Scene 11 labels both with the concat formula. */
+  const SKIPS = [
+    { from: 2,  to: 14, label: 'skip · concat along channels (16+16=32)' },
+    { from: 5,  to: 10, label: 'skip · concat along channels (32+32=64)' },
+  ];
+
+  /* ---------------------------------------------------------------
+     Compute layout (X, Y per tensor) once. Pure function of constants.
+     --------------------------------------------------------------- */
+  function computeLayout() {
+    const INTRA = 10;     // within a block
+    const BLOCK = 22;     // between blocks within a row
+    const ROW_Y = { 1: 150, 2: 330, 3: 480 };
+
+    const pos = {};
+    let x = 20;
+    function place(id, channels, spatial, row, gap) {
+      const w = barWidth(channels);
+      const h = barHeight(spatial);
+      const cy = ROW_Y[row];
+      const y = cy - h / 2;
+      pos[id] = { x: x, y: y, w: w, h: h, cx: x + w / 2, cy: cy };
+      x += w + gap;
+    }
+    place('t0',  3,  64, 1, INTRA);
+    place('t1',  16, 64, 1, INTRA);
+    place('t2',  16, 64, 1, BLOCK);
+
+    x = pos.t2.x + pos.t2.w + BLOCK;
+    place('t3',  16, 32, 2, INTRA);
+    place('t4',  32, 32, 2, INTRA);
+    place('t5',  32, 32, 2, BLOCK);
+
+    x = pos.t5.x + pos.t5.w + BLOCK;
+    place('t6',  32, 16, 3, INTRA);
+    place('t7',  64, 16, 3, INTRA);
+    place('t8',  64, 16, 3, BLOCK);
+
+    x = pos.t8.x + pos.t8.w + BLOCK;
+    place('t9',  32, 32, 2, INTRA);
+    place('t10', 64, 32, 2, INTRA);
+    place('t11', 32, 32, 2, INTRA);
+    place('t12', 32, 32, 2, BLOCK);
+
+    x = pos.t12.x + pos.t12.w + BLOCK;
+    place('t13', 16, 64, 1, INTRA);
+    place('t14', 32, 64, 1, INTRA);
+    place('t15', 16, 64, 1, INTRA);
+    place('t16', 16, 64, 1, BLOCK);
+    place('t17', 5,  64, 1, INTRA);
+    place('t18', 1,  64, 1, INTRA);
+
+    return { pos: pos, rowY: ROW_Y };
+  }
+
+  /* ---------------------------------------------------------------
+     Tiny DOM helper.
+     --------------------------------------------------------------- */
   function el(tag, attrs, parent) {
     const node = document.createElement(tag);
     if (attrs) {
@@ -47,671 +157,612 @@
     if (parent) parent.appendChild(node);
     return node;
   }
-
+  function svgEl(tag, attrs, parent) {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    if (attrs) {
+      for (const k in attrs) {
+        if (k === 'text') node.textContent = attrs[k];
+        else node.setAttribute(k, attrs[k]);
+      }
+    }
+    if (parent) parent.appendChild(node);
+    return node;
+  }
   function readHashFlag(name) {
     const re = new RegExp('[#&?]' + name + '(?:=([^&]*))?');
     const m = (window.location.hash || '').match(re);
     return m ? (m[1] != null ? m[1] : true) : null;
   }
 
-  /* Per-node operation descriptions.  Each entry has:
-       title : short name for the tooltip header
-       shape : "H × W × C" string
-       op    : caption-like English line
-       tex   : KaTeX formula (display mode)
-  */
-  const NODE_INFO = {
-    input: {
-      title: 'input',
-      shape: '64 × 64 × 3',
-      op: 'RGB image, 3 channels in [0, 1].',
-      tex: 'x \\in \\mathbb{R}^{64 \\times 64 \\times 3}',
-    },
-    enc1: {
-      title: 'enc1 — conv block',
-      shape: '64 × 64 × 16',
-      op: '2× (Conv 3×3, ReLU). Resolution unchanged, channels 3 → 16.',
-      tex: '\\mathrm{enc}_1 = \\mathrm{ReLU}(W_{1b} * \\mathrm{ReLU}(W_{1a} * x + b_{1a}) + b_{1b})',
-    },
-    pool1: {
-      title: 'pool1 — max-pool 2×2',
-      shape: '32 × 32 × 16',
-      op: 'MaxPool with stride 2. Halves H and W; channels untouched.',
-      tex: '\\mathrm{pool}_1[i, j, c] = \\max_{u, v \\in \\{0,1\\}} \\mathrm{enc}_1[2i + u, 2j + v, c]',
-    },
-    enc2: {
-      title: 'enc2 — conv block',
-      shape: '32 × 32 × 32',
-      op: '2× (Conv 3×3, ReLU). Channels 16 → 32.',
-      tex: '\\mathrm{enc}_2 = \\mathrm{ConvBlock}_{16 \\to 32}(\\mathrm{pool}_1)',
-    },
-    pool2: {
-      title: 'pool2 — max-pool 2×2',
-      shape: '16 × 16 × 32',
-      op: 'Halve again. We are at the bottleneck resolution.',
-      tex: '\\mathrm{pool}_2[i, j, c] = \\max_{u, v \\in \\{0,1\\}} \\mathrm{enc}_2[2i + u, 2j + v, c]',
-    },
-    enc3: {
-      title: 'enc3 — bottleneck',
-      shape: '16 × 16 × 64',
-      op: 'Deepest features. Each cell looks at a ~30×30 input patch.',
-      tex: '\\mathrm{enc}_3 = \\mathrm{ConvBlock}_{32 \\to 64}(\\mathrm{pool}_2)',
-    },
-    up2: {
-      title: 'up2 — transposed conv (stride 2)',
-      shape: '32 × 32 × 32',
-      op: 'Learned upsample. Doubles H, W; channels 64 → 32.',
-      tex: '\\mathrm{up}_2 = W_{u2}^{\\top} \\circledast \\mathrm{enc}_3',
-    },
-    cat2: {
-      title: 'concat with enc2',
-      shape: '32 × 32 × 64',
-      op: 'Stack channels: skip path (32) + upsample path (32).',
-      tex: '\\mathrm{cat}_2 = \\bigl[\\mathrm{up}_2 \\,\\Vert\\, \\mathrm{enc}_2\\bigr] \\;\\;(32+32 = 64\\ \\text{channels})',
-    },
-    dec2: {
-      title: 'dec2 — conv block',
-      shape: '32 × 32 × 32',
-      op: '2× (Conv 3×3, ReLU). Mixes the upsample and the skip.',
-      tex: '\\mathrm{dec}_2 = \\mathrm{ConvBlock}_{64 \\to 32}(\\mathrm{cat}_2)',
-    },
-    up1: {
-      title: 'up1 — transposed conv (stride 2)',
-      shape: '64 × 64 × 16',
-      op: 'Back to full resolution. Channels 32 → 16.',
-      tex: '\\mathrm{up}_1 = W_{u1}^{\\top} \\circledast \\mathrm{dec}_2',
-    },
-    cat1: {
-      title: 'concat with enc1',
-      shape: '64 × 64 × 32',
-      op: 'Stack channels: skip path (16) + upsample path (16).',
-      tex: '\\mathrm{cat}_1 = \\bigl[\\mathrm{up}_1 \\,\\Vert\\, \\mathrm{enc}_1\\bigr] \\;\\;(16+16 = 32\\ \\text{channels})',
-    },
-    dec1: {
-      title: 'dec1 — conv block',
-      shape: '64 × 64 × 16',
-      op: '2× (Conv 3×3, ReLU). Final feature map at full resolution.',
-      tex: '\\mathrm{dec}_1 = \\mathrm{ConvBlock}_{32 \\to 16}(\\mathrm{cat}_1)',
-    },
-    head: {
-      title: '1×1 conv → 5 logits → softmax',
-      shape: '64 × 64 × 5',
-      op: 'Per-pixel 5-way classification.',
-      tex: '\\hat{y}[i,j,k] = \\mathrm{softmax}_k\\bigl(W_{\\mathrm{out}} \\cdot \\mathrm{dec}_1[i,j]\\bigr)',
-    },
-    output: {
-      title: 'argmax',
-      shape: '64 × 64',
-      op: 'Pick the highest-probability class at every pixel.',
-      tex: 'y[i,j] = \\arg\\max_k \\hat{y}[i,j,k]',
-    },
-  };
-
-  /* Skip arcs: source/dest + concat formula. */
-  const SKIP_INFO = {
-    skip1: {
-      title: 'skip 1 — enc1 → dec1',
-      from: 'enc1 (64 × 64 × 16)',
-      to:   'cat1 (64 × 64 × 32)',
-      op:   'Concatenate along the channel dimension.',
-      tex:  '\\mathrm{cat}_1 = \\bigl[\\mathrm{up}_1 \\,\\Vert\\, \\mathrm{enc}_1\\bigr] \\quad 16 + 16 = 32',
-    },
-    skip2: {
-      title: 'skip 2 — enc2 → dec2',
-      from: 'enc2 (32 × 32 × 32)',
-      to:   'cat2 (32 × 32 × 64)',
-      op:   'Concatenate along the channel dimension.',
-      tex:  '\\mathrm{cat}_2 = \\bigl[\\mathrm{up}_2 \\,\\Vert\\, \\mathrm{enc}_2\\bigr] \\quad 32 + 32 = 64',
-    },
-  };
-
-  /* The temporal order in which the "play forward" sweep lights up cards. */
-  const SWEEP_NODES = [
-    'enc1', 'enc2', 'enc3', 'dec2', 'dec1', 'output',
-  ];
-
+  /* ---------------------------------------------------------------
+     Build scene.
+     --------------------------------------------------------------- */
   function buildScene(root) {
-    if (!window.DATA || !window.DATA.scene64) {
-      root.innerHTML = '<p style="opacity:0.5">scene64 data missing.</p>';
+    if (!window.DATA || !window.DATA.scene64 || !window.Drawing) {
+      root.innerHTML = '<p style="opacity:0.5">Scene 11: missing globals.</p>';
       return {};
     }
     const D = window.DATA.scene64;
+    if (!D.samples || !D.samples.length) {
+      root.innerHTML = '<p style="opacity:0.5">Scene 11: no samples.</p>';
+      return {};
+    }
 
     root.innerHTML = '';
     root.classList.add('s11-root');
     const wrap = el('div', { class: 's11-wrap' }, root);
 
-    /* ---- Hero ------------------------------------------------------- */
+    /* ---- Hero ---------------------------------------------------- */
     const hero = el('header', { class: 'hero s11-hero' }, wrap);
     el('h1', { text: 'The U-Net, fully wired.' }, hero);
     el('p', {
       class: 'subtitle',
-      text: 'Every line in this diagram has been earned. Now they all fit on one page.',
+      text: 'Every line of this diagram has been earned over the previous scenes. Here it is, fully labeled.',
     }, hero);
     el('p', {
       class: 'lede',
       html:
-        'Hover any <em>node</em> to see the operation formula. Hover any <em>skip arc</em> ' +
-        'to see the concat arithmetic. The "play forward" button runs a real input through it.',
+        'The reference card. All bookends, hover, and arrow annotations are on from the start. ' +
+        'Bar <em>height</em> encodes spatial size; bar <em>width</em> encodes channel count. ' +
+        'Hover any bar for its shape and a peek at its feature maps; press ' +
+        '<em>play forward</em> to replay the data flow.',
     }, hero);
 
-    /* ---- The architecture diagram ----------------------------------- */
-    const arch = el('div', { class: 's11-arch' }, wrap);
-
-    /* Sample selector (small inline strip). */
-    const selRow = el('div', { class: 's11-selector' }, wrap);
-    el('span', { class: 's11-selector-label', text: 'sample' }, selRow);
-    const selBtns = [];
+    /* ---- Sample picker + play button ---------------------------- */
+    const ctrl = el('div', { class: 's11-controls-top' }, wrap);
+    const sampleRow = el('div', { class: 's11-sample-row' }, ctrl);
+    el('span', { class: 's11-control-label', text: 'sample' }, sampleRow);
+    const sampleBtns = [];
     for (let i = 0; i < D.samples.length; i++) {
       const b = el('button', {
         type: 'button', class: 's11-sample-btn', text: String(i + 1),
         'data-idx': String(i),
-      }, selRow);
-      selBtns.push(b);
-      b.addEventListener('click', function () {
-        state.sampleIdx = i;
-        updateSampleBtns();
-        renderCardContents();
-      });
+      }, sampleRow);
+      sampleBtns.push(b);
     }
-    /* "Play forward" button lives on the same row. */
-    el('span', { class: 's11-selector-spacer' }, selRow);
     const playBtn = el('button', {
-      type: 'button', class: 's11-play-btn primary', text: '▶ play forward',
-    }, selRow);
+      type: 'button', class: 's11-play-btn', text: '▶ play forward',
+    }, sampleRow);
 
-    /* SVG overlay for arrows. We draw 4 flow arrows (pool1, pool2,
-       up2, up1), 2 skip arcs, the head arrow (dec1 → output). */
-    const arrowsSvg = el('div', { class: 's11-arrows' }, arch);
-    arrowsSvg.innerHTML =
-      '<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
-      '<defs>' +
-        '<marker id="s11-arrow" viewBox="0 0 10 10" refX="9" refY="5" ' +
-        'markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
-          '<path d="M 0 0 L 10 5 L 0 10 z" />' +
-        '</marker>' +
-      '</defs>' +
-      // Skip arcs
-      '<g class="s11-skip s11-skip1" data-key="skip1">' +
-        '<path class="s11-skip-path s11-edge-path" fill="none" marker-end="url(#s11-arrow)" />' +
-        '<path class="s11-skip-hit s11-edge-hit" fill="none" stroke-width="22" stroke="transparent" />' +
-        '<text class="s11-edge-label s11-skip-label" text-anchor="middle">' +
-          'skip · 16 + 16 = 32</text>' +
-      '</g>' +
-      '<g class="s11-skip s11-skip2" data-key="skip2">' +
-        '<path class="s11-skip-path s11-edge-path" fill="none" marker-end="url(#s11-arrow)" />' +
-        '<path class="s11-skip-hit s11-edge-hit" fill="none" stroke-width="22" stroke="transparent" />' +
-        '<text class="s11-edge-label s11-skip-label" text-anchor="middle">' +
-          'skip · 32 + 32 = 64</text>' +
-      '</g>' +
-      // Down arrows
-      '<g class="s11-flow s11-flow-d1">' +
-        '<path class="s11-down s11-edge-path" fill="none" marker-end="url(#s11-arrow)" />' +
-        '<text class="s11-edge-label s11-down-label" text-anchor="start">pool · 64 → 32</text>' +
-      '</g>' +
-      '<g class="s11-flow s11-flow-d2">' +
-        '<path class="s11-down s11-edge-path" fill="none" marker-end="url(#s11-arrow)" />' +
-        '<text class="s11-edge-label s11-down-label" text-anchor="start">pool · 32 → 16</text>' +
-      '</g>' +
-      // Up arrows
-      '<g class="s11-flow s11-flow-u1">' +
-        '<path class="s11-up s11-edge-path" fill="none" marker-end="url(#s11-arrow)" />' +
-        '<text class="s11-edge-label s11-up-label" text-anchor="start">up2 · 16 → 32</text>' +
-      '</g>' +
-      '<g class="s11-flow s11-flow-u2">' +
-        '<path class="s11-up s11-edge-path" fill="none" marker-end="url(#s11-arrow)" />' +
-        '<text class="s11-edge-label s11-up-label" text-anchor="start">up1 · 32 → 64</text>' +
-      '</g>' +
-      // Head arrow (dec1 → output)
-      '<g class="s11-flow s11-flow-head">' +
-        '<path class="s11-head-path s11-edge-path" fill="none" marker-end="url(#s11-arrow)" />' +
-        '<text class="s11-edge-label s11-head-label" text-anchor="start">' +
-          '1×1 conv + softmax · 16 → 5</text>' +
-      '</g>' +
-      '</svg>';
+    /* ---- The diagram (SVG inside scrollable host) ---------------- */
+    const layout = computeLayout();
 
-    /* Three columns: encoder (left), bottleneck (centre-bottom), decoder (right).
-       Plus an input card on the far left and an output card on the far right. */
-    const inCol = el('div', { class: 's11-col s11-col-in' }, arch);
-    const inputCard = makeIOCard(inCol, 'input', '64×64×3', INPUT_PX, 'input');
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    Object.keys(layout.pos).forEach(function (k) {
+      const p = layout.pos[k];
+      if (p.x < minX) minX = p.x;
+      if (p.x + p.w > maxX) maxX = p.x + p.w;
+      if (p.y < minY) minY = p.y;
+      if (p.y + p.h > maxY) maxY = p.y + p.h;
+    });
+    const PAD_LEFT = 18 + BOOKEND_PX + 20;
+    const PAD_RIGHT = 18 + BOOKEND_PX + 20;
+    const PAD_TOP = 22;
+    const PAD_BOTTOM = 70;   // a few extra px for the landmark labels
 
-    const encCol = el('div', { class: 's11-col s11-col-enc' }, arch);
-    const enc1Card = makeLevelCard(encCol, 'enc1', '64×64×16', LEVEL1_PX, 'enc1');
-    const enc2Card = makeLevelCard(encCol, 'enc2', '32×32×32', LEVEL2_PX, 'enc2');
+    const SVG_W = maxX + PAD_LEFT + PAD_RIGHT;
+    const SVG_H = maxY + PAD_TOP + PAD_BOTTOM;
 
-    const botCol = el('div', { class: 's11-col s11-col-bot' }, arch);
-    const enc3Card = makeLevelCard(botCol, 'enc3', '16×16×64 · bottleneck', LEVEL3_PX, 'enc3');
+    Object.keys(layout.pos).forEach(function (k) {
+      const p = layout.pos[k];
+      p.x += PAD_LEFT;
+      p.y += PAD_TOP;
+      p.cx += PAD_LEFT;
+      p.cy += PAD_TOP;
+    });
 
-    const decCol = el('div', { class: 's11-col s11-col-dec' }, arch);
-    const dec1Card = makeLevelCard(decCol, 'dec1', '64×64×16', LEVEL1_PX, 'dec1');
-    const dec2Card = makeLevelCard(decCol, 'dec2', '32×32×32', LEVEL2_PX, 'dec2');
+    const arch = el('div', { class: 's11-arch' }, wrap);
+    // The reference scene starts in its fully-wired state. We keep the
+    // class names that scene 0 uses for bookends/hover/sweep so the
+    // stylesheet can reuse the same selectors (with the s11- prefix).
+    arch.classList.add('s11-show-bookends');
+    arch.classList.add('s11-show-hover');
 
-    const outCol = el('div', { class: 's11-col s11-col-out' }, arch);
-    const outputCard = makeIOCard(outCol, 'output', '64×64 · argmax', OUTPUT_PX, 'output');
+    const svgHost = el('div', { class: 's11-svg-host' }, arch);
 
-    /* Tooltip that follows the cursor for nodes/edges. */
-    const tooltip = el('div', { class: 's11-tooltip', role: 'tooltip' }, root);
-    tooltip.style.display = 'none';
-    const ttHead = el('div', { class: 's11-tt-head' }, tooltip);
-    el('div', { class: 's11-tt-shape' }, tooltip);
-    el('div', { class: 's11-tt-op' }, tooltip);
-    const ttFormula = el('div', { class: 's11-tt-formula' }, tooltip);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + Math.round(SVG_W) + ' ' + Math.round(SVG_H));
+    svg.setAttribute('width',  String(Math.round(SVG_W)));
+    svg.setAttribute('height', String(Math.round(SVG_H)));
+    svg.setAttribute('class', 's11-svg');
+    svgHost.appendChild(svg);
 
-    /* ---- Class legend ----------------------------------------------- */
-    const legend = el('div', { class: 's11-legend' }, wrap);
-    for (let c = 0; c < CLASS_NAMES.length; c++) {
-      const item = el('div', { class: 's11-legend-item' }, legend);
-      el('span', { class: 's11-swatch class-' + CLASS_NAMES[c] }, item);
-      el('span', { class: 's11-legend-name', text: CLASS_NAMES[c] }, item);
+    const defs = svgEl('defs', null, svg);
+    function makeMarker(id, color) {
+      const m = svgEl('marker', {
+        id: id, viewBox: '0 0 10 10', refX: '8', refY: '5',
+        markerWidth: '6', markerHeight: '6', orient: 'auto-start-reverse',
+      }, defs);
+      svgEl('path', { d: 'M 0 0 L 10 5 L 0 10 z', fill: color }, m);
+    }
+    makeMarker('s11-mk-conv',    OP_COLORS.conv);
+    makeMarker('s11-mk-pool',    OP_COLORS.pool);
+    makeMarker('s11-mk-upconv',  OP_COLORS.upconv);
+    makeMarker('s11-mk-onexone', OP_COLORS.onexone);
+    makeMarker('s11-mk-argmax',  '#888');
+    makeMarker('s11-mk-concat',  '#7d776c');
+    makeMarker('s11-mk-skip-light', '#9e9789');
+    makeMarker('s11-mk-skip-dark',  '#5f5b54');
+
+    const gArrows = svgEl('g', { class: 's11-g-arrows' }, svg);
+    const gSkips  = svgEl('g', { class: 's11-g-skips'  }, svg);
+    const gBars   = svgEl('g', { class: 's11-g-bars'   }, svg);
+    const gLabels = svgEl('g', { class: 's11-g-labels' }, svg);
+    const gAnnot  = svgEl('g', { class: 's11-g-annot'  }, svg);
+    const gLandmarks = svgEl('g', { class: 's11-g-landmarks' }, svg);
+
+    const tensorBars = {};   // id → { group, hit }
+
+    /* ---- Draw bars + labels ------------------------------------- */
+    TENSORS.forEach(function (t, idx) {
+      const p = layout.pos[t.id];
+      const grp = svgEl('g', { class: 's11-bar-group', 'data-idx': String(idx), 'data-id': t.id }, gBars);
+
+      if (t.split) {
+        const halfW = p.w / 2;
+        svgEl('rect', {
+          class: 's11-bar s11-bar-up',
+          x: String(p.x), y: String(p.y),
+          width: String(halfW), height: String(p.h),
+          'data-half': 'up',
+        }, grp);
+        svgEl('rect', {
+          class: 's11-bar s11-bar-skip',
+          x: String(p.x + halfW), y: String(p.y),
+          width: String(halfW), height: String(p.h),
+          'data-half': 'skip',
+        }, grp);
+        svgEl('rect', {
+          class: 's11-bar-outline',
+          x: String(p.x), y: String(p.y),
+          width: String(p.w), height: String(p.h),
+        }, grp);
+      } else {
+        const cls =
+          (t.id === 't0')  ? 's11-bar s11-bar-input' :
+          (t.id === 't18') ? 's11-bar s11-bar-output' :
+                             's11-bar s11-bar-act';
+        svgEl('rect', {
+          class: cls,
+          x: String(p.x), y: String(p.y),
+          width: String(p.w), height: String(p.h),
+        }, grp);
+        svgEl('rect', {
+          class: 's11-bar-outline',
+          x: String(p.x), y: String(p.y),
+          width: String(p.w), height: String(p.h),
+        }, grp);
+      }
+
+      const hit = svgEl('rect', {
+        class: 's11-bar-hit',
+        x: String(p.x - 4),
+        y: String(p.y - 22),
+        width: String(p.w + 8),
+        height: String(p.h + 60),
+        fill: 'transparent',
+        'data-idx': String(idx),
+      }, grp);
+
+      tensorBars[t.id] = { group: grp, hit: hit };
+
+      svgEl('text', {
+        class: 's11-label-channels',
+        x: String(p.cx),
+        y: String(p.y - 8),
+        'text-anchor': 'middle',
+        text: String(t.channels),
+      }, gLabels);
+      svgEl('text', {
+        class: 's11-label-spatial',
+        x: String(p.cx),
+        y: String(p.y + p.h + 14),
+        'text-anchor': 'middle',
+        text: t.spatial + '²',
+      }, gLabels);
+      if (t.annotate) {
+        svgEl('text', {
+          class: 's11-label-annot',
+          x: String(p.cx),
+          y: String(p.y + p.h + 28),
+          'text-anchor': 'middle',
+          text: t.annotate,
+        }, gAnnot);
+      }
+    });
+
+    /* ---- Draw operation arrows --------------------------------- */
+    /* Track how many landmark labels we've already placed for each
+       op type so we can de-duplicate the text on the second one
+       (e.g., the second pool gets no label — the first one already
+       said "max-pool, /2"). Same for transposed conv. */
+    const landmarkSeen = {};
+    OPS.forEach(function (op) {
+      const from = TENSORS[op.from], to = TENSORS[op.to];
+      const pf = layout.pos[from.id], pt = layout.pos[to.id];
+      const x1 = pf.x + pf.w;
+      const y1 = pf.cy;
+      const x2 = pt.x;
+      const y2 = pt.cy;
+      let pathD;
+      let cls;
+      let mk;
+      let labelMidpoint = null;  // { x, y, dy } for landmark text
+      if (op.type === 'conv') {
+        pathD = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+        cls = 's11-arrow s11-arrow-conv';
+        mk = 's11-mk-conv';
+      } else if (op.type === 'pool') {
+        pathD = 'M ' + x1 + ' ' + y1 +
+                ' C ' + (x1 + 18) + ' ' + y1 + ', ' +
+                        (x2 - 18) + ' ' + y2 + ', ' +
+                        x2 + ' ' + y2;
+        cls = 's11-arrow s11-arrow-pool';
+        mk = 's11-mk-pool';
+        labelMidpoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2, dx: 12, dy: -4, anchor: 'start' };
+      } else if (op.type === 'upconv') {
+        pathD = 'M ' + x1 + ' ' + y1 +
+                ' C ' + (x1 + 18) + ' ' + y1 + ', ' +
+                        (x2 - 18) + ' ' + y2 + ', ' +
+                        x2 + ' ' + y2;
+        cls = 's11-arrow s11-arrow-upconv';
+        mk = 's11-mk-upconv';
+        labelMidpoint = { x: (x1 + x2) / 2, y: (y1 + y2) / 2, dx: -12, dy: -4, anchor: 'end' };
+      } else if (op.type === 'concat-merge') {
+        pathD = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+        cls = 's11-arrow s11-arrow-concat';
+        mk = 's11-mk-concat';
+      } else if (op.type === 'onexone') {
+        pathD = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+        cls = 's11-arrow s11-arrow-onexone';
+        mk = 's11-mk-onexone';
+        labelMidpoint = { x: (x1 + x2) / 2, y: y1 - 10, dx: 0, dy: 0, anchor: 'middle' };
+      } else { // argmax
+        pathD = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+        cls = 's11-arrow s11-arrow-argmax';
+        mk = 's11-mk-argmax';
+      }
+      svgEl('path', {
+        class: cls,
+        d: pathD,
+        fill: 'none',
+        'marker-end': 'url(#' + mk + ')',
+      }, gArrows);
+
+      // Landmark annotation: only place the FIRST occurrence of each
+      // landmark op type, to avoid noise (we already have two pools
+      // and two transposed convs, and they're identical operations).
+      if (op.landmark && labelMidpoint && !landmarkSeen[op.type]) {
+        landmarkSeen[op.type] = true;
+        svgEl('text', {
+          class: 's11-landmark s11-landmark-' + op.type,
+          x: String(labelMidpoint.x + (labelMidpoint.dx || 0)),
+          y: String(labelMidpoint.y + (labelMidpoint.dy || 0)),
+          'text-anchor': labelMidpoint.anchor || 'middle',
+          text: op.landmark,
+        }, gLandmarks);
+      }
+    });
+
+    /* ---- Draw skip arcs ----------------------------------------- */
+    SKIPS.forEach(function (sk, kIdx) {
+      const from = TENSORS[sk.from], to = TENSORS[sk.to];
+      const pf = layout.pos[from.id], pt = layout.pos[to.id];
+      const halfW = pt.w / 2;
+      const x1 = pf.x + pf.w - 4;
+      const y1 = pf.y - 4;
+      const x2 = pt.x + halfW + 2;
+      const y2 = pt.y - 4;
+      const dx = x2 - x1;
+      const peak = Math.max(20, 30 - kIdx * 6);
+      const yc = Math.min(y1, y2) - peak;
+      const cx1 = x1 + Math.max(80, dx * 0.25);
+      const cx2 = x2 - Math.max(80, dx * 0.25);
+      const pathD =
+        'M ' + x1 + ' ' + y1 + ' ' +
+        'C ' + cx1 + ' ' + yc + ', ' +
+              cx2 + ' ' + yc + ', ' +
+              x2  + ' ' + y2;
+      svgEl('path', {
+        class: 's11-arrow s11-arrow-skip',
+        d: pathD,
+        fill: 'none',
+        'marker-end': 'url(#s11-mk-skip-light)',
+      }, gSkips);
+      // Label the FIRST skip arc (encoder1 → cat1) — because this scene
+      // is a reference card we want to clearly call out the concat
+      // semantics. The legend handles the rest.
+      if (kIdx === 0) {
+        svgEl('text', {
+          class: 's11-arrow-label s11-landmark s11-landmark-skip',
+          x: String((x1 + x2) / 2),
+          y: String(yc - 6),
+          'text-anchor': 'middle',
+          text: 'concat along channels',
+        }, gSkips);
+      }
+    });
+
+    /* ---- Bookend hosts (HTML overlays on top of the SVG) -------- */
+    function makeBookend(host, klass, x, y, px, label) {
+      const node = el('div', { class: 's11-bookend ' + klass }, host);
+      node.style.left   = (x - px / 2) + 'px';
+      node.style.top    = (y - px / 2) + 'px';
+      node.style.width  = px + 'px';
+      node.style.height = px + 'px';
+      const inner = el('div', { class: 's11-bookend-canvas' }, node);
+      inner.style.width = px + 'px';
+      inner.style.height = px + 'px';
+      el('div', { class: 's11-bookend-label', text: label }, node);
+      return inner;
     }
 
-    /* ---- Caption + step controls ----------------------------------- */
+    const inputBook = makeBookend(
+      svgHost, 's11-bookend-input',
+      layout.pos.t0.x - 16 - BOOKEND_PX / 2,
+      layout.pos.t0.cy,
+      BOOKEND_PX,
+      'real input'
+    );
+    const outputBook = makeBookend(
+      svgHost, 's11-bookend-output',
+      layout.pos.t18.x + layout.pos.t18.w + 16 + BOOKEND_PX / 2,
+      layout.pos.t18.cy,
+      BOOKEND_PX,
+      'predicted seg'
+    );
+
+    /* ---- Legend (HTML overlay anchored inside the SVG host) ----- */
+    const legend = el('div', { class: 's11-legend' }, svgHost);
+    const legendLeft = layout.pos.t2.x + layout.pos.t2.w + 24;
+    legend.style.left = legendLeft + 'px';
+    legend.style.top  = '8px';
+    function legendItem(swatchClass, label) {
+      const row = el('div', { class: 's11-legend-row' }, legend);
+      el('span', { class: 's11-legend-swatch ' + swatchClass }, row);
+      el('span', { class: 's11-legend-label', text: label }, row);
+    }
+    el('div', { class: 's11-legend-title', text: 'operations' }, legend);
+    legendItem('lg-conv',    'conv 3×3 + ReLU');
+    legendItem('lg-pool',    'max-pool 2×2');
+    legendItem('lg-upconv',  'transposed conv 2×2');
+    legendItem('lg-skip',    'skip (long, dashed) + concat input (short)');
+    legendItem('lg-onexone', 'conv 1×1');
+    legendItem('lg-argmax',  'argmax (logits → label)');
+
+    /* ---- Hover sidebar (always live) ---------------------------- */
+    const sidebar = el('aside', { class: 's11-sidebar' }, arch);
+    const sbHead = el('div', { class: 's11-sb-head' }, sidebar);
+    const sbName = el('div', { class: 's11-sb-name', text: 'hover a tensor' }, sbHead);
+    const sbOp   = el('div', { class: 's11-sb-op',   text: 'shape, op, and a peek at the activations' }, sbHead);
+    const sbShape = el('div', { class: 's11-sb-shape' }, sidebar);
+    const sbPreviewWrap = el('div', { class: 's11-sb-preview-wrap' }, sidebar);
+    const sbPreviewSubtitle = el('div', { class: 's11-sb-preview-subtitle' }, sidebar);
+    const sbHint = el('div', { class: 's11-sb-hint' }, sidebar);
+
+    /* ---- Caption ------------------------------------------------ */
     const caption = el('p', { class: 'caption s11-caption' }, wrap);
+    caption.textContent =
+      'Reference card: bookends, hover, and the four landmark labels are on by default. ' +
+      'Press play forward to replay the data flow in execution order.';
 
+    /* ---- Step controls (single step → minimal nav) -------------- */
+    // We keep a tiny controls row for parity with other scenes (reset
+    // button + the play forward replay), but no step slider since
+    // there's only one step.
     const controls = el('div', { class: 'controls s11-controls' }, wrap);
-    const stepGroup = el('div', { class: 'control-group' }, controls);
-    el('label', { text: 'step', for: 's11-step' }, stepGroup);
-    const stepInput = el('input', {
-      id: 's11-step', type: 'range', min: '0', max: String(NUM_STEPS - 1),
-      step: '1', value: '0',
-    }, stepGroup);
-    const stepOut = el('output', { class: 'control-value', text: '0 / ' + (NUM_STEPS - 1) }, stepGroup);
-
     const navGroup = el('div', { class: 'control-group' }, controls);
-    const prevBtn = el('button', { type: 'button', text: 'prev' }, navGroup);
-    const nextBtn = el('button', { type: 'button', class: 'primary', text: 'next' }, navGroup);
-    const resetBtn = el('button', { type: 'button', text: 'reset' }, navGroup);
+    const replayBtn = el('button', { type: 'button', class: 'primary', text: 'replay sweep' }, navGroup);
+    const resetBtn  = el('button', { type: 'button', text: 'reset' }, navGroup);
 
-    /* ---- State ------------------------------------------------------ */
+    /* ---- State -------------------------------------------------- */
+    function pickRichest(samples) {
+      let best = 0, bestCount = -1;
+      for (let k = 0; k < samples.length; k++) {
+        const seen = new Set();
+        const lbl = samples[k].label;
+        for (let i = 0; i < lbl.length; i++) {
+          for (let j = 0; j < lbl[0].length; j++) seen.add(lbl[i][j]);
+        }
+        if (seen.size > bestCount) { bestCount = seen.size; best = k; }
+      }
+      return best;
+    }
     const state = {
       step: 0,
-      sampleIdx: 0,
-      sweep: -1,        // index into SWEEP_NODES; -1 means no sweep active
+      sampleIdx: pickRichest(D.samples),
+      hoveredIdx: null,
+      sweepIdx: -1,
       sweepTimer: null,
       runTimer: null,
     };
+    const sample = function () { return D.samples[state.sampleIdx]; };
 
+    /* ---- Sample picker UI -------------------------------------- */
     function updateSampleBtns() {
-      for (let i = 0; i < selBtns.length; i++) {
-        selBtns[i].classList.toggle('active', i === state.sampleIdx);
-      }
-    }
-
-    /* All level/IO cards keyed by their NODE_INFO key. */
-    const cardMap = {
-      input:  inputCard,
-      enc1:   enc1Card,
-      enc2:   enc2Card,
-      enc3:   enc3Card,
-      dec1:   dec1Card,
-      dec2:   dec2Card,
-      output: outputCard,
-    };
-
-    /* Paint every card's contents according to current sample. We always
-       show contents (this is the synthesis scene); step 0 just dims the
-       labels, not the data. */
-    function renderCardContents() {
-      const sample = D.samples[state.sampleIdx];
-      window.Drawing.paintRGB(inputCard.body, sample.input, INPUT_PX);
-      window.Drawing.paintFeatureCard(enc1Card.body, sample.enc1, LEVEL1_PX);
-      window.Drawing.paintFeatureCard(enc2Card.body, sample.enc2, LEVEL2_PX);
-      window.Drawing.paintFeatureCard(enc3Card.body, sample.enc3, LEVEL3_PX);
-      window.Drawing.paintFeatureCard(dec2Card.body, sample.dec2, LEVEL2_PX);
-      window.Drawing.paintFeatureCard(dec1Card.body, sample.dec1, LEVEL1_PX);
-      window.Drawing.paintLabelMap(outputCard.body, sample.pred, OUTPUT_PX);
-    }
-
-    /* Compute the SVG arrow paths from real DOM positions. Same approach
-       as cnn-deepdive scene9's layoutArrows(). */
-    function layoutArrows() {
-      const archRect = arch.getBoundingClientRect();
-      if (!archRect.width || !archRect.height) return;
-
-      const svg = arrowsSvg.querySelector('svg');
-      svg.setAttribute('viewBox',
-        '0 0 ' + Math.round(archRect.width) + ' ' + Math.round(archRect.height));
-      svg.setAttribute('width', String(Math.round(archRect.width)));
-      svg.setAttribute('height', String(Math.round(archRect.height)));
-
-      function rectOf(node) {
-        const r = node.getBoundingClientRect();
-        return {
-          x: r.left - archRect.left,
-          y: r.top - archRect.top,
-          w: r.width,
-          h: r.height,
-          right: r.right - archRect.left,
-          bottom: r.bottom - archRect.top,
-          cx: (r.left + r.right) / 2 - archRect.left,
-          cy: (r.top + r.bottom) / 2 - archRect.top,
-        };
-      }
-
-      const rIn = rectOf(inputCard.card);
-      const r1e = rectOf(enc1Card.card);
-      const r2e = rectOf(enc2Card.card);
-      const r3  = rectOf(enc3Card.card);
-      const r2d = rectOf(dec2Card.card);
-      const r1d = rectOf(dec1Card.card);
-      const rOut = rectOf(outputCard.card);
-
-      function setPathOn(group, d) {
-        const ps = group.querySelectorAll('path');
-        for (let i = 0; i < ps.length; i++) ps[i].setAttribute('d', d);
-      }
-      function setText(group, x, y, s) {
-        const t = group.querySelector('text');
-        t.setAttribute('x', String(x));
-        t.setAttribute('y', String(y));
-        if (s != null) t.textContent = s;
-      }
-
-      const skip1 = arrowsSvg.querySelector('.s11-skip1');
-      const skip2 = arrowsSvg.querySelector('.s11-skip2');
-      const flowD1 = arrowsSvg.querySelector('.s11-flow-d1');
-      const flowD2 = arrowsSvg.querySelector('.s11-flow-d2');
-      const flowU1 = arrowsSvg.querySelector('.s11-flow-u1');
-      const flowU2 = arrowsSvg.querySelector('.s11-flow-u2');
-      const flowHead = arrowsSvg.querySelector('.s11-flow-head');
-
-      // skip1: enc1 right -> dec1 left, arc bowing high.
-      const s1ax = r1e.right - 6;
-      const s1ay = r1e.y - 8;
-      const s1bx = r1d.x + 6;
-      const s1by = r1d.y - 8;
-      const peak1 = 24;
-      const Yc1 = (8 * peak1 - s1ay - s1by) / 6;
-      const c1 = Math.max(160, (s1bx - s1ax) * 0.26);
-      const d1 = 'M ' + s1ax + ' ' + s1ay + ' ' +
-        'C ' + (s1ax + c1) + ' ' + Yc1 + ', ' +
-              (s1bx - c1) + ' ' + Yc1 + ', ' +
-              s1bx + ' ' + s1by;
-      setPathOn(skip1, d1);
-      setText(skip1, (s1ax + s1bx) / 2, peak1 - 8, 'skip · 16 + 16 = 32');
-
-      // skip2: enc2 right -> dec2 left, arc bowing into the centre dead zone.
-      const s2ax = r2e.right;
-      const s2ay = r2e.cy;
-      const s2bx = r2d.x;
-      const s2by = r2d.cy;
-      const peak2 = (r1e.bottom + r2e.y) / 2 - 8;
-      const Yc2 = (8 * peak2 - s2ay - s2by) / 6;
-      const c2 = Math.max(140, (s2bx - s2ax) * 0.28);
-      const d2 = 'M ' + s2ax + ' ' + s2ay + ' ' +
-        'C ' + (s2ax + c2) + ' ' + Yc2 + ', ' +
-              (s2bx - c2) + ' ' + Yc2 + ', ' +
-              s2bx + ' ' + s2by;
-      setPathOn(skip2, d2);
-      setText(skip2, (s2ax + s2bx) / 2, peak2 - 4, 'skip · 32 + 32 = 64');
-
-      // pool1: enc1 bottom centre -> enc2 top centre
-      setPathOn(flowD1,
-        'M ' + r1e.cx + ' ' + r1e.bottom + ' ' +
-        'L ' + r2e.cx + ' ' + r2e.y);
-      setText(flowD1, r1e.cx + 8, (r1e.bottom + r2e.y) / 2 + 4, 'pool · 64 → 32');
-
-      // pool2: enc2 bottom -> enc3 top, slightly curved (enc3 is centred lower)
-      const d3ax = r2e.cx;
-      const d3ay = r2e.bottom;
-      const d3bx = r3.x + 6;
-      const d3by = r3.y;
-      setPathOn(flowD2,
-        'M ' + d3ax + ' ' + d3ay + ' ' +
-        'C ' + d3ax + ' ' + (d3ay + 30) + ', ' +
-              d3bx + ' ' + (d3by - 20) + ', ' +
-              d3bx + ' ' + d3by);
-      setText(flowD2, (d3ax + d3bx) / 2 - 28, (d3ay + d3by) / 2 + 16, 'pool · 32 → 16');
-
-      // up2: enc3 top-right -> dec2 bottom-centre
-      const u1ax = r3.right - 6;
-      const u1ay = r3.y;
-      const u1bx = r2d.cx;
-      const u1by = r2d.bottom;
-      setPathOn(flowU1,
-        'M ' + u1ax + ' ' + u1ay + ' ' +
-        'C ' + u1ax + ' ' + (u1ay - 20) + ', ' +
-              u1bx + ' ' + (u1by + 30) + ', ' +
-              u1bx + ' ' + u1by);
-      setText(flowU1, (u1ax + u1bx) / 2 + 6, (u1ay + u1by) / 2 + 16, 'up2 · 16 → 32');
-
-      // up1: dec2 top centre -> dec1 bottom centre.
-      // Shorter label so it fits in the small gap between the two cards.
-      setPathOn(flowU2,
-        'M ' + r2d.cx + ' ' + r2d.y + ' ' +
-        'L ' + r1d.cx + ' ' + r1d.bottom);
-      setText(flowU2, r1d.cx + 8, (r1d.bottom + r2d.y) / 2 + 4, 'up1 · 32 → 64');
-
-      // head: dec1 right -> output left (both at top row).
-      // Place the label ABOVE both cards so it does not cover either.
-      setPathOn(flowHead,
-        'M ' + r1d.right + ' ' + r1d.cy + ' ' +
-        'L ' + rOut.x + ' ' + rOut.cy);
-      const headMidX = (r1d.right + rOut.x) / 2;
-      const headTextY = Math.max(12, Math.min(r1d.y, rOut.y) - 6);
-      const flowHeadText = flowHead.querySelector('text');
-      flowHeadText.setAttribute('text-anchor', 'middle');
-      setText(flowHead, headMidX, headTextY, '1×1 conv + softmax · 16 → 5');
-
-      // input -> enc1 (no SVG arrow needed; just a CSS pseudo). For
-      // simplicity we omit it; the layout makes the connection obvious.
-    }
-
-    /* ---- Tooltip behaviour ----------------------------------------- */
-
-    function showTooltip(info, pageX, pageY) {
-      ttHead.textContent = info.title;
-      tooltip.querySelector('.s11-tt-shape').textContent = info.shape || '';
-      tooltip.querySelector('.s11-tt-op').textContent = info.op || '';
-      ttFormula.innerHTML = '';
-      if (info.tex) {
-        window.Katex.render(info.tex, ttFormula, true);
-      }
-      tooltip.style.display = '';
-      positionTooltip(pageX, pageY);
-    }
-    function hideTooltip() {
-      tooltip.style.display = 'none';
-    }
-    function positionTooltip(pageX, pageY) {
-      // Place tooltip near the cursor but constrained to the viewport.
-      const pad = 14;
-      tooltip.style.left = '0px';
-      tooltip.style.top = '0px';
-      // Force layout so we get the right size.
-      const w = tooltip.offsetWidth;
-      const h = tooltip.offsetHeight;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      let x = pageX + pad;
-      let y = pageY + pad;
-      if (x + w > vw - 10) x = pageX - w - pad;
-      if (y + h > vh - 10) y = pageY - h - pad;
-      if (x < 10) x = 10;
-      if (y < 10) y = 10;
-      tooltip.style.left = x + 'px';
-      tooltip.style.top = y + 'px';
-    }
-
-    function attachHover(target, infoLookup) {
-      target.addEventListener('mouseenter', function (e) {
-        if (state.step < 3) return;
-        showTooltip(infoLookup(), e.clientX, e.clientY);
-      });
-      target.addEventListener('mousemove', function (e) {
-        if (state.step < 3) return;
-        positionTooltip(e.clientX, e.clientY);
-      });
-      target.addEventListener('mouseleave', function () {
-        hideTooltip();
+      sampleBtns.forEach(function (b, i) {
+        b.classList.toggle('active', i === state.sampleIdx);
       });
     }
-
-    // Wire hover for cards.
-    Object.keys(cardMap).forEach(function (k) {
-      attachHover(cardMap[k].card, function () { return NODE_INFO[k]; });
-    });
-    // Wire hover for skip arcs (the .s11-edge-hit acts as the wide hit area).
-    arrowsSvg.querySelectorAll('.s11-skip').forEach(function (g) {
-      const key = g.getAttribute('data-key');
-      attachHover(g, function () { return SKIP_INFO[key]; });
+    sampleBtns.forEach(function (b, i) {
+      b.addEventListener('click', function () {
+        state.sampleIdx = i;
+        updateSampleBtns();
+        renderBookends();
+        if (state.hoveredIdx != null) renderPopover(state.hoveredIdx);
+      });
     });
 
-    /* ---- Step / sweep logic ---------------------------------------- */
+    /* ---- Bookends rendering ------------------------------------ */
+    function renderBookends() {
+      const s = sample();
+      window.Drawing.paintRGB(inputBook, s.input, BOOKEND_PX);
+      window.Drawing.paintLabelMap(outputBook, s.pred, BOOKEND_PX);
+    }
 
-    function captionFor(step) {
-      switch (step) {
-        case 0: return 'The U-Net at rest. Six cards, two skip arcs, one head.';
-        case 1: return 'Edge labels: every arrow knows what shape it carries.';
-        case 2: return 'Node labels: every card knows what operation it performs.';
-        case 3: return 'Hover any card or arc for the formula and the shape arithmetic.';
-        case 4: return 'Play forward: the input flows left to right, enc → bottleneck → dec → out.';
-        default: return '';
+    /* ---- Popover (hover sidebar) ------------------------------- */
+    function renderPopover(idx) {
+      if (idx == null) {
+        sbName.textContent = 'hover a tensor';
+        sbOp.textContent   = 'shape, op, and a peek at the activations';
+        sbShape.textContent = '';
+        sbPreviewWrap.innerHTML = '';
+        sbPreviewSubtitle.textContent = '';
+        sbHint.textContent = '';
+        return;
+      }
+      const t = TENSORS[idx];
+      sbName.textContent = t.name;
+      sbOp.textContent   = t.op;
+      sbShape.innerHTML  = '<span class="s11-sb-shape-label">shape</span> ' +
+        t.spatial + ' × ' + t.spatial + ' × ' + t.channels;
+      sbPreviewWrap.innerHTML = '';
+      if (t.preview) {
+        const stack = sample()[t.preview];
+        if (stack && stack.length === 4) {
+          const previewHost = el('div', { class: 's11-sb-preview' }, sbPreviewWrap);
+          const PREV_PX = 132;
+          previewHost.style.width = PREV_PX + 'px';
+          previewHost.style.height = PREV_PX + 'px';
+          window.Drawing.paintFeatureCard(previewHost, stack, PREV_PX);
+          sbPreviewSubtitle.textContent = '4 of ' + t.channels + ' channels (top variance)';
+          sbHint.textContent = '';
+        } else {
+          sbPreviewSubtitle.textContent = '';
+          sbHint.textContent = 'preview unavailable for this sample.';
+        }
+      } else {
+        sbPreviewSubtitle.textContent = '';
+        sbHint.textContent = 'intermediate tensor — not exported as a preview.';
       }
     }
 
+    /* ---- Bar hover wiring -------------------------------------- */
+    function setHover(idx) {
+      Object.keys(tensorBars).forEach(function (k) {
+        tensorBars[k].group.classList.remove('s11-bar-hover');
+      });
+      state.hoveredIdx = idx;
+      if (idx != null) {
+        tensorBars[TENSORS[idx].id].group.classList.add('s11-bar-hover');
+        renderPopover(idx);
+      } else {
+        renderPopover(null);
+      }
+    }
+
+    TENSORS.forEach(function (t, idx) {
+      const handle = tensorBars[t.id].hit;
+      handle.addEventListener('mouseenter', function () {
+        if (state.sweepTimer) return;
+        setHover(idx);
+      });
+      handle.addEventListener('mouseleave', function () {
+        if (state.sweepTimer) return;
+        setHover(null);
+      });
+    });
+
+    /* ---- Sweep -------------------------------------------------- */
     function clearSweep() {
       if (state.sweepTimer) { clearInterval(state.sweepTimer); state.sweepTimer = null; }
-      state.sweep = -1;
-      arch.querySelectorAll('.s11-card.s11-sweep').forEach(function (c) {
-        c.classList.remove('s11-sweep');
+      state.sweepIdx = -1;
+      arch.classList.remove('s11-show-sweep');
+      Object.keys(tensorBars).forEach(function (k) {
+        tensorBars[k].group.classList.remove('s11-bar-sweep');
+        tensorBars[k].group.classList.remove('s11-bar-sweep-active');
       });
     }
-
     function startSweep() {
       clearSweep();
-      state.sweep = 0;
+      arch.classList.add('s11-show-sweep');
+      state.sweepIdx = 0;
       state.sweepTimer = setInterval(function () {
-        // Mark current node as swept; previous stays "visited".
-        if (state.sweep < SWEEP_NODES.length) {
-          const k = SWEEP_NODES[state.sweep];
-          cardMap[k].card.classList.add('s11-sweep');
-          state.sweep++;
-        } else {
+        if (state.sweepIdx >= TENSORS.length) {
           clearInterval(state.sweepTimer);
           state.sweepTimer = null;
+          // After the sweep completes, drop the sweep dimming so the
+          // diagram returns to its full reference-card state.
+          setTimeout(function () {
+            if (!state.sweepTimer) {
+              arch.classList.remove('s11-show-sweep');
+              Object.keys(tensorBars).forEach(function (k) {
+                tensorBars[k].group.classList.remove('s11-bar-sweep');
+                tensorBars[k].group.classList.remove('s11-bar-sweep-active');
+              });
+            }
+          }, 700);
+          return;
         }
+        Object.keys(tensorBars).forEach(function (k) {
+          tensorBars[k].group.classList.remove('s11-bar-sweep-active');
+        });
+        for (let i = 0; i < state.sweepIdx; i++) {
+          tensorBars[TENSORS[i].id].group.classList.add('s11-bar-sweep');
+        }
+        const cur = TENSORS[state.sweepIdx];
+        tensorBars[cur.id].group.classList.add('s11-bar-sweep');
+        tensorBars[cur.id].group.classList.add('s11-bar-sweep-active');
+        renderPopover(state.sweepIdx);
+        state.sweepIdx++;
       }, SWEEP_STEP_MS);
     }
 
-    function render() {
-      const step = state.step;
-      arch.classList.toggle('s11-show-edge-labels', step >= 1);
-      arch.classList.toggle('s11-show-node-labels', step >= 2);
-      arch.classList.toggle('s11-hover-on', step >= 3);
-      // From step 1 onward, all the flow + skip arrows are drawn.
-      arch.classList.toggle('s11-edges-lit', step >= 0);
-
-      if (step !== 4) clearSweep();
-
-      caption.textContent = captionFor(step);
-      stepInput.value = String(step);
-      stepOut.textContent = step + ' / ' + (NUM_STEPS - 1);
-      prevBtn.disabled = step <= 0;
-      nextBtn.disabled = step >= NUM_STEPS - 1;
-
-      if (step === 4 && state.sweep < 0) {
-        startSweep();
-      }
-
-      requestAnimationFrame(layoutArrows);
-    }
-
-    function applyStep(c) {
-      state.step = Math.max(0, Math.min(NUM_STEPS - 1, c));
-      render();
-    }
-
-    prevBtn.addEventListener('click', function () { applyStep(state.step - 1); });
-    nextBtn.addEventListener('click', function () { applyStep(state.step + 1); });
-    resetBtn.addEventListener('click', function () { applyStep(0); });
-    stepInput.addEventListener('input', function () {
-      const v = parseInt(stepInput.value, 10);
-      if (Number.isFinite(v)) applyStep(v);
-    });
     playBtn.addEventListener('click', function () {
-      // Jump straight to step 4 (the sweep step).
-      applyStep(4);
-      // If we're already at 4, force a re-sweep.
+      clearSweep();
+      startSweep();
+    });
+    replayBtn.addEventListener('click', function () {
       clearSweep();
       startSweep();
     });
 
-    /* ---- Initial paint --------------------------------------------- */
+    /* ---- Render ------------------------------------------------ */
+    function render() {
+      // Always paint bookends. Always show hover. Always show landmark
+      // labels. The reference card is fully wired from the start.
+      renderBookends();
+    }
+
+    resetBtn.addEventListener('click', function () {
+      clearSweep();
+      setHover(null);
+      state.sampleIdx = pickRichest(D.samples);
+      updateSampleBtns();
+      renderBookends();
+    });
+
+    /* ---- Initial paint ----------------------------------------- */
     updateSampleBtns();
-    renderCardContents();
     render();
 
-    requestAnimationFrame(function () {
-      requestAnimationFrame(layoutArrows);
-    });
-    setTimeout(layoutArrows, 0);
-    setTimeout(layoutArrows, 50);
-    setTimeout(layoutArrows, 200);
-
-    const onResize = function () { layoutArrows(); };
-    window.addEventListener('resize', onResize);
-    const onScroll = function () { hideTooltip(); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-
-    /* &run -> auto-advance through 0..3, then trigger play forward. */
-    function autoAdvance(target) {
-      if (state.step >= target) {
-        // Then fire the sweep.
+    /* ---- &run: trigger the play sweep automatically ------------ */
+    if (readHashFlag('run')) {
+      state.runTimer = setTimeout(function () {
         playBtn.click();
         state.runTimer = null;
-        return;
-      }
-      applyStep(state.step + 1);
-      state.runTimer = setTimeout(function () { autoAdvance(target); }, RUN_INTERVAL_MS);
-    }
-    if (readHashFlag('run')) {
-      state.runTimer = setTimeout(function () { autoAdvance(3); }, 300);
+      }, 600);
     }
 
     return {
       onEnter: function () {
-        renderCardContents();
         render();
-        requestAnimationFrame(function () {
-          requestAnimationFrame(layoutArrows);
-        });
       },
       onLeave: function () {
         if (state.runTimer) { clearTimeout(state.runTimer); state.runTimer = null; }
         clearSweep();
-        hideTooltip();
-        window.removeEventListener('resize', onResize);
-        window.removeEventListener('scroll', onScroll);
+        setHover(null);
       },
       onNextKey: function () {
-        if (state.step < NUM_STEPS - 1) { applyStep(state.step + 1); return true; }
+        // Single step — never consume the keystroke; let the deck
+        // driver advance to the next scene.
         return false;
       },
       onPrevKey: function () {
-        if (state.step > 0) { applyStep(state.step - 1); return true; }
         return false;
       },
     };
-  }
-
-  /* ---- Card factories -------------------------------------------- */
-
-  function makeLevelCard(parent, name, sub, px, key) {
-    const card = el('div', { class: 's11-card', 'data-node': key }, parent);
-    const head = el('div', { class: 's11-card-head' }, card);
-    el('span', { class: 's11-card-name', text: name }, head);
-    el('span', { class: 's11-card-sub', text: sub }, head);
-    const body = el('div', {
-      class: 'canvas-host s11-card-body',
-      style: 'width:' + px + 'px;height:' + px + 'px;',
-    }, card);
-    return { card: card, body: body };
-  }
-
-  function makeIOCard(parent, name, sub, px, key) {
-    // Same DOM shape as a level card; the painter chooses what to draw.
-    return makeLevelCard(parent, name, sub, px, key);
   }
 
   window.scenes = window.scenes || {};
