@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SML — neural networks visualizations</title>
+  <style>
+    :root[data-theme="light"] {
+      --ink: #1c1c1c;
+      --ink-secondary: #6b6b6b;
+      --rule: #d8d4ca;
+      --card-bg: #ffffff;
+      --bg: #f5f1e8;
+      --accent: #d97a1f;
+      --accent-soft: #f0c79a;
+    }
+    :root[data-theme="dark"] {
+      --ink: #ece8da;
+      --ink-secondary: #8a8579;
+      --rule: #383530;
+      --card-bg: #211e19;
+      --bg: #15130f;
+      --accent: #e8923f;
+      --accent-soft: #5c3a1c;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Iowan Old Style", Palatino, Georgia, serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.55;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 32px;
+      border-bottom: 1px solid var(--rule);
+      background: var(--card-bg);
+    }
+    .brand {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+    .theme-toggle {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      background: var(--bg);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 48px 32px 64px;
+    }
+
+    .hero {
+      margin-bottom: 32px;
+    }
+    .hero h1 {
+      font-size: 36px;
+      margin: 0 0 6px 0;
+      font-weight: 600;
+    }
+    .hero .subtitle {
+      font-style: italic;
+      font-size: 16px;
+      color: var(--ink-secondary);
+      margin: 0 0 12px 0;
+    }
+    .hero .lede {
+      font-size: 15px;
+      max-width: 720px;
+      margin: 0;
+    }
+    .hero .lede em { font-style: italic; color: var(--ink); }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 18px;
+      margin-top: 36px;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 22px 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--rule);
+      border-radius: 4px;
+      text-decoration: none;
+      color: var(--ink);
+      transition: border-left-color 0.15s ease, transform 0.15s ease;
+    }
+    .card:hover {
+      border-left-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .card-eyebrow {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+    }
+    .card-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.25;
+    }
+    .card-desc {
+      font-size: 14px;
+      color: var(--ink);
+      line-height: 1.55;
+      margin: 0;
+    }
+    .card-foot {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      color: var(--ink-secondary);
+    }
+    .card-foot .arrow {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    footer {
+      margin-top: 56px;
+      padding-top: 22px;
+      border-top: 1px solid var(--rule);
+      font-size: 12px;
+      color: var(--ink-secondary);
+      font-family: "SF Mono", Menlo, monospace;
+    }
+    footer a { color: var(--ink-secondary); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">SML &middot; neural networks</div>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme">theme</button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Neural network visualizations</h1>
+      <p class="subtitle">Click-step visual explainers built for SML / FS&nbsp;25–26.</p>
+      <p class="lede">
+        Four self-contained, browser-only visualizations.
+        Each one is a small interactive deck —
+        click <em>next</em> (or use the arrow keys) to advance one step at a time.
+        Light/dark theme toggles in the top-right of every page.
+      </p>
+    </section>
+
+    <section class="cards">
+      <a class="card" href="cnn-deepdive/">
+        <span class="card-eyebrow">10 scenes &middot; CNNs</span>
+        <h2 class="card-title">Convolutional networks: a deep dive</h2>
+        <p class="card-desc">
+          From "a filter is a little picture" through receptive fields,
+          handcrafted vs. learned filters, and what individual neurons
+          want to see — ending with segmentation as the same machinery,
+          per pixel.
+        </p>
+        <div class="card-foot">
+          <span class="arrow">→</span>
+          <span>cnn-deepdive/</span>
+        </div>
+      </a>
+
+      <a class="card" href="unet-deepdive/">
+        <span class="card-eyebrow">14 scenes &middot; U-Net &middot; segmentation</span>
+        <h2 class="card-title">U-Net: a deep dive</h2>
+        <p class="card-desc">
+          The full U-Net story: encoder, bottleneck, what the filters
+          look like, why pooling needs to be undone, three ways to
+          upsample, the transposed-convolution stamp mechanic, skip
+          connections, training dynamics, and failure modes.
+        </p>
+        <div class="card-foot">
+          <span class="arrow">→</span>
+          <span>unet-deepdive/</span>
+        </div>
+      </a>
+
+      <a class="card" href="gradient-descent-viz/">
+        <span class="card-eyebrow">Optimization</span>
+        <h2 class="card-title">Gradient descent</h2>
+        <p class="card-desc">
+          Watch a parameter walk down a loss surface. Step size, momentum,
+          and the high-D loss landscape — without the equations getting in
+          the way.
+        </p>
+        <div class="card-foot">
+          <span class="arrow">→</span>
+          <span>gradient-descent-viz/</span>
+        </div>
+      </a>
+
+      <a class="card" href="demo2-stack-neurons/">
+        <span class="card-eyebrow">Building intuition</span>
+        <h2 class="card-title">Stack neurons, build curves</h2>
+        <p class="card-desc">
+          Take one neuron, then two, then many: see how a stack of simple
+          ReLU units composes into the curves a small network can
+          actually represent.
+        </p>
+        <div class="card-foot">
+          <span class="arrow">→</span>
+          <span>demo2-stack-neurons/</span>
+        </div>
+      </a>
+    </section>
+
+    <footer>
+      Source: <a href="https://github.com/sml-fs26/neuralnetworks">github.com/sml-fs26/neuralnetworks</a>
+    </footer>
+  </main>
+
+  <script>
+    // Tiny theme toggle — mirrors the per-viz pattern (CSS-variable swap
+    // via [data-theme] on <html>). Stored in localStorage under a
+    // landing-page-specific key so it doesn't fight the per-viz toggles.
+    (function () {
+      var root = document.documentElement;
+      var KEY = 'sml-landing.theme';
+      var saved = null;
+      try { saved = localStorage.getItem(KEY); } catch (e) {}
+      if (saved === 'dark' || saved === 'light') {
+        root.setAttribute('data-theme', saved);
+      }
+      var btn = document.getElementById('theme-toggle');
+      if (btn) {
+        btn.addEventListener('click', function () {
+          var cur = root.getAttribute('data-theme') || 'light';
+          var next = cur === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-theme', next);
+          try { localStorage.setItem(KEY, next); } catch (e) {}
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

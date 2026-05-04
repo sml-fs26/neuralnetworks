@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+# Builds a Pages artifact from the entire repo on every push to main and
+# deploys it. The site is fully static — no build step beyond uploading.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, but don't cancel an in-progress
+# one — let it finish and queue any newer push behind it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Whole repo. The static visualizations live under their own
+          # folders (cnn-deepdive/, unet-deepdive/, …); the root
+          # index.html is the landing page.
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
