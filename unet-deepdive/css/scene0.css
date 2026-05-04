@@ -222,6 +222,15 @@
 .s0-arrow-upconv   { stroke: #9067c2; stroke-width: 1.8; }
 .s0-arrow-onexone  { stroke: #3a8fb7; stroke-width: 1.8; }
 .s0-arrow-argmax   { stroke: var(--ink-secondary); stroke-width: 1.2; stroke-dasharray: 4 3; }
+/* up→concat short arrow: same gray as the skip arc, but solid (not dashed)
+   so the viewer sees "two gray inputs feed this concat — one is the
+   long-distance skip, the other is the local upsample". */
+.s0-arrow-concat {
+  stroke: #7d776c;
+  stroke-width: 1.6;
+  opacity: 0.9;
+}
+:root[data-theme="dark"] .s0-arrow-concat { stroke: #a09a8d; }
 .s0-arrow-skip {
   stroke: var(--ink-secondary);
   stroke-width: 1.6;
@@ -321,6 +330,13 @@
   margin-top: 2px;
 }
 .s0-legend-swatch.lg-onexone { background: #3a8fb7; }
+.s0-legend-swatch.lg-argmax {
+  background: transparent;
+  border-top: 2px dashed var(--ink-secondary);
+  height: 0;
+  margin-top: 2px;
+  opacity: 0.7;
+}
 :root[data-theme="dark"] .s0-legend-swatch.lg-conv    { background: #7bc070; }
 :root[data-theme="dark"] .s0-legend-swatch.lg-pool    { background: #e07a7a; }
 :root[data-theme="dark"] .s0-legend-swatch.lg-upconv  { background: #b08adb; }

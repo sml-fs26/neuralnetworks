@@ -301,6 +301,7 @@
     makeMarker('s0-mk-upconv',  OP_COLORS.upconv);
     makeMarker('s0-mk-onexone', OP_COLORS.onexone);
     makeMarker('s0-mk-argmax',  '#888');
+    makeMarker('s0-mk-concat',  '#7d776c');   // gray, matches skip color
     makeMarker('s0-mk-skip-light', '#9e9789');
     makeMarker('s0-mk-skip-dark',  '#5f5b54');
 
@@ -434,13 +435,14 @@
         mk = 's0-mk-upconv';
       } else if (op.type === 'concat-merge') {
         // up2 → cat2 (and up1 → cat1): a short straight in-row arrow that
-        // says "the upsample becomes the front half of the concat".
-        // We render it like a conv arrow but in the upsample purple to
-        // emphasize the lineage. It is the SHORT arrow; the SKIP arc is
-        // the long counterpart.
+        // says "the upsample is one of the two inputs to the concat".
+        // Drawn in the SAME gray as the skip arc (which is the *other*
+        // input to the same concat) but solid, not dashed, so the viewer
+        // sees "two gray things enter the concat — both are concat inputs;
+        // one is the long-distance skip, the other is the local upsample".
         pathD = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
-        cls = 's0-arrow s0-arrow-upconv';
-        mk = 's0-mk-upconv';
+        cls = 's0-arrow s0-arrow-concat';
+        mk = 's0-mk-concat';
       } else if (op.type === 'onexone') {
         pathD = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
         cls = 's0-arrow s0-arrow-onexone';
@@ -551,8 +553,9 @@
     legendItem('lg-conv',    'conv 3×3 + ReLU');
     legendItem('lg-pool',    'max-pool 2×2');
     legendItem('lg-upconv',  'transposed conv 2×2');
-    legendItem('lg-skip',    'skip · concat (channels)');
+    legendItem('lg-skip',    'skip (long, dashed) + concat input (short)');
     legendItem('lg-onexone', 'conv 1×1');
+    legendItem('lg-argmax',  'argmax (logits → label)');
 
     /* ---- Hover sidebar ------------------------------------------ */
     const sidebar = el('aside', { class: 's0-sidebar' }, arch);
