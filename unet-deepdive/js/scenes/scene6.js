@@ -387,6 +387,74 @@
     tableRow('bilinear', 'no', 'yes', 'no (blurry)');
     tableRow('transposed conv', 'yes', 'depends on filter', 'depends on filter', true);
 
+    /* ---- Stamp animation: tying scene 7 back to upsampling ---------- */
+    /* User feedback: "I cannot infer how the actual transposed conv from scene 7
+       maps to this 4×4 → 8×8 upsample case." So we replay scene 7's stamp
+       mechanic, but with the *upsample* parameters: 4×4 input, stride 2, the
+       same 3×3 filter scene 6 already uses. Stamps land at (i*2, j*2) into a
+       9×9 raw output; the U-Net trims to 8×8 by dropping the last row/col.
+       The mechanism (each input cell stamps a scaled copy of the kernel) is
+       identical to scene 7. */
+    const stampSec = el('section', { class: 's6-stamp-section' }, wrap);
+    el('div', { class: 's6-stamp-eyebrow', text: 'how the transposed-conv panel was actually computed' }, stampSec);
+    el('p', {
+      class: 's6-stamp-intro',
+      html:
+        'Same stamp mechanic as scene 7 (the centerpiece you just saw), but applied ' +
+        'to <em>upsampling</em>: input 4×4, stride <strong>2</strong>, kernel 3×3. ' +
+        'Each of the 16 input cells stamps the kernel × its value into the output, ' +
+        'placed at <code>(i·2, j·2)</code>. With stride 2 the stamps land further ' +
+        'apart than in scene 7; some cells overlap, others don\'t.',
+    }, stampSec);
+
+    const stampPanel = el('div', { class: 's6-stamp-panel' }, stampSec);
+    const stampInputCol = el('div', { class: 's6-stamp-col' }, stampPanel);
+    el('div', { class: 's6-stamp-cap', text: 'input · 4 × 4' }, stampInputCol);
+    const stampInputHost = el('div', { class: 'canvas-host s6-stamp-host' }, stampInputCol);
+    el('div', { class: 's6-stamp-op', text: '×' }, stampPanel);
+    const stampKernelCol = el('div', { class: 's6-stamp-col' }, stampPanel);
+    const stampKernelCap = el('div', { class: 's6-stamp-cap', text: 'kernel · 3 × 3' }, stampKernelCol);
+    const stampKernelHost = el('div', { class: 'canvas-host s6-stamp-host' }, stampKernelCol);
+    el('div', { class: 's6-stamp-op', text: '=' }, stampPanel);
+    const stampScaledCol = el('div', { class: 's6-stamp-col' }, stampPanel);
+    const stampScaledCap = el('div', { class: 's6-stamp-cap', text: 'stamp = X × K' }, stampScaledCol);
+    const stampScaledHost = el('div', { class: 'canvas-host s6-stamp-host' }, stampScaledCol);
+    el('div', { class: 's6-stamp-op s6-stamp-op-arrow', text: '→' }, stampPanel);
+
+    const stampOutRow = el('div', { class: 's6-stamp-out-row' }, stampSec);
+    const stampOutCol = el('div', { class: 's6-stamp-col s6-stamp-col-out' }, stampOutRow);
+    el('div', { class: 's6-stamp-cap', text: 'output · 9 × 9 (raw, before crop)' }, stampOutCol);
+    const stampOutHost = el('div', { class: 'canvas-host s6-stamp-out-host' }, stampOutCol);
+    el('div', {
+      class: 's6-stamp-sub',
+      text: 'each stamp lands at (i·2, j·2); overlaps sum',
+    }, stampOutCol);
+
+    const stampNarr = el('div', { class: 's6-stamp-narr' }, stampSec);
+    const stampNarrTitle = el('div', { class: 's6-stamp-narr-title', text: 'press → stamp to begin' }, stampNarr);
+    const stampNarrBody  = el('div', { class: 's6-stamp-narr-body' }, stampNarr);
+
+    const stampCtrls = el('div', { class: 's6-stamp-controls' }, stampSec);
+    el('label', { class: 's6-stamp-ctrl-label', text: 'stamps placed' }, stampCtrls);
+    const stampSlider = el('input', {
+      type: 'range', min: '0', max: '16', step: '1', value: '0',
+      class: 's6-stamp-slider',
+    }, stampCtrls);
+    const stampOut = el('output', { class: 's6-stamp-ctrl-value', text: '0 / 16' }, stampCtrls);
+    const stampPrevBtn = el('button', { type: 'button', class: 's6-btn', text: 'prev' }, stampCtrls);
+    const stampNextBtn = el('button', { type: 'button', class: 's6-btn s6-btn-primary', text: 'first stamp →' }, stampCtrls);
+    const stampPlayBtn = el('button', { type: 'button', class: 's6-btn', text: 'play full ▶' }, stampCtrls);
+    const stampResetBtn = el('button', { type: 'button', class: 's6-btn', text: 'reset' }, stampCtrls);
+
+    el('p', {
+      class: 's6-stamp-cropnote',
+      html:
+        '<strong>About the size:</strong> the raw stamp output is 9×9. ' +
+        'The U-Net trims a 1-pixel border to get exactly 8×8 (matching the ' +
+        'encoder\'s spatial shape at this level). The trimming is a shape-' +
+        'alignment detail; the stamp mechanic is what matters.',
+    }, stampSec);
+
     /* ---- Caption ---------------------------------------------------- */
     const caption = el('p', { class: 'caption s6-caption' }, wrap);
 
@@ -612,6 +680,7 @@
       paintInput();
       paintSwatches();
       renderOutputs();
+      if (typeof renderStampSection === 'function') renderStampSection();
 
       // Caption + control widgets.
       caption.textContent = captionFor(state.step);
@@ -661,8 +730,251 @@
       if (Number.isFinite(v)) applyStep(v);
     });
 
+    /* ---- Stamp animation: state, helpers, render -------------------- */
+    /* Independent state machine for the "see the stamps in action" panel
+       at the bottom. 16 input cells (4×4) → up to 16 stamps into a 9×9
+       output (raw transposed conv, stride 2, 3×3 kernel). */
+    const STAMP_RUN_MS = 700;
+    const STAMP_INPUT_PX = 168;
+    const STAMP_KERNEL_PX = 168;
+    const STAMP_OUT_CELL = 36;       // 9 cells × 36 px = 324 px
+    const stampState = { step: 0 };
+    let stampTimer = null;
+    function stopStampTimer() {
+      if (stampTimer) { clearTimeout(stampTimer); stampTimer = null; }
+    }
+
+    function currentInput4x4() {
+      const name = currentInputName();
+      const inp = D.inputs[name];
+      return inp || fullMask(4, 4, 0);
+    }
+    function currentTconvKernel() {
+      const k = D.filters && D.filters[tconvFilter];
+      return k || [[0,0.2,0],[0.2,0.2,0.2],[0,0.2,0]]; // safe fallback
+    }
+
+    function buildStampTrace2(input, kernel, stride) {
+      const N = input.length;
+      const K = kernel.length;
+      const O = (N - 1) * stride + K;            // raw output side
+      const canvas = [];
+      for (let i = 0; i < O; i++) {
+        const row = []; for (let j = 0; j < O; j++) row.push(0);
+        canvas.push(row);
+      }
+      const frames = [canvas.map(r => r.slice())];
+      const meta = [];
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          const v = input[i][j];
+          const stamp = [];
+          for (let u = 0; u < K; u++) {
+            const sr = []; for (let w = 0; w < K; w++) sr.push(v * kernel[u][w]);
+            stamp.push(sr);
+          }
+          for (let u = 0; u < K; u++) {
+            for (let w = 0; w < K; w++) {
+              canvas[i * stride + u][j * stride + w] += v * kernel[u][w];
+            }
+          }
+          frames.push(canvas.map(r => r.slice()));
+          meta.push({
+            k: meta.length + 1,
+            inputCell: [i, j],
+            inputValue: v,
+            stamp: stamp,
+            targetR: [i * stride, i * stride + K - 1],
+            targetC: [j * stride, j * stride + K - 1],
+          });
+        }
+      }
+      return { frames, meta, O };
+    }
+
+    function paintStampGrid(host, data, opts) {
+      host.innerHTML = '';
+      opts = opts || {};
+      const rows = data.length, cols = data[0].length;
+      const cell = opts.cell || Math.floor((opts.px || 168) / Math.max(rows, cols));
+      const W = cell * cols, H = cell * rows;
+      const setup = window.Drawing.setupCanvas(host, W, H);
+      const ctx = setup.ctx;
+      const t = window.Drawing.tokens();
+      ctx.fillStyle = t.bg;
+      ctx.fillRect(0, 0, W, H);
+      let m = 0;
+      for (const row of data) for (const v of row) m = Math.max(m, Math.abs(v));
+      if (!m) m = 1;
+      if (opts.vmax) m = opts.vmax;
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          ctx.fillStyle = window.Drawing.divergingColor(data[i][j] / m, t);
+          ctx.fillRect(j * cell, i * cell, Math.ceil(cell), Math.ceil(cell));
+        }
+      }
+      ctx.strokeStyle = t.rule; ctx.lineWidth = 1;
+      for (let i = 0; i <= rows; i++) {
+        ctx.beginPath(); ctx.moveTo(0, i*cell); ctx.lineTo(W, i*cell); ctx.stroke();
+      }
+      for (let j = 0; j <= cols; j++) {
+        ctx.beginPath(); ctx.moveTo(j*cell, 0); ctx.lineTo(j*cell, H); ctx.stroke();
+      }
+      if (opts.labels !== false) {
+        ctx.font = `${Math.max(10, Math.floor(cell * 0.34))}px "SF Mono", Menlo, monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            const v = data[i][j];
+            const intensity = Math.min(1, Math.abs(v) / m);
+            ctx.fillStyle = intensity > 0.55 ? t.bg : t.ink;
+            const s = Math.abs(v) < 1e-9 ? '0'
+                      : (Number.isInteger(v) ? String(v) : v.toFixed(2));
+            ctx.fillText(s, (j + 0.5) * cell, (i + 0.5) * cell);
+          }
+        }
+      }
+      if (opts.highlight) {
+        const h = opts.highlight;
+        ctx.lineWidth = 3; ctx.strokeStyle = '#d97a1f';
+        ctx.strokeRect(h.col*cell + 1.5, h.row*cell + 1.5,
+          (h.cols||1)*cell - 3, (h.rows||1)*cell - 3);
+      }
+      if (opts.targetBox) {
+        const b = opts.targetBox;
+        ctx.lineWidth = 2.5; ctx.strokeStyle = '#d97a1f';
+        ctx.setLineDash([5, 4]);
+        ctx.strokeRect(b.col*cell + 1.25, b.row*cell + 1.25,
+          (b.cols||1)*cell - 2.5, (b.rows||1)*cell - 2.5);
+        ctx.setLineDash([]);
+      }
+    }
+
+    let lastStampInputIdx = state.inputIdx;
+    function renderStampSection() {
+      // If the input swatch has just changed, reset the stamp animation
+      // so the viewer can replay it on the new input.
+      if (state.inputIdx !== lastStampInputIdx) {
+        stopStampTimer();
+        stampState.step = 0;
+        lastStampInputIdx = state.inputIdx;
+      }
+      const inp = currentInput4x4();
+      const ker = currentTconvKernel();
+      const trace = buildStampTrace2(inp, ker, 2);
+      const O = trace.O;
+      const total = inp.length * inp[0].length;        // 16
+      stampState.step = Math.max(0, Math.min(total, stampState.step));
+
+      // Input panel: highlight active cell at step >= 1
+      let inHL = null;
+      if (stampState.step >= 1 && stampState.step <= total) {
+        const m = trace.meta[stampState.step - 1];
+        inHL = { row: m.inputCell[0], col: m.inputCell[1] };
+      }
+      paintStampGrid(stampInputHost, inp, { px: STAMP_INPUT_PX, vmax: 1, highlight: inHL });
+      paintStampGrid(stampKernelHost, ker, { px: STAMP_KERNEL_PX, vmax: 0.25 });
+
+      // Scaled stamp panel
+      if (stampState.step >= 1 && stampState.step <= total) {
+        const m = trace.meta[stampState.step - 1];
+        if (m.inputValue === 0) {
+          stampScaledCap.textContent = 'stamp = 0 × K = 0';
+          paintStampGrid(stampScaledHost, [[0,0,0],[0,0,0],[0,0,0]], { px: STAMP_KERNEL_PX, vmax: 1 });
+        } else {
+          stampScaledCap.textContent = 'stamp = ' + m.inputValue + ' × K';
+          paintStampGrid(stampScaledHost, m.stamp, { px: STAMP_KERNEL_PX, vmax: Math.max(0.25, Math.abs(m.inputValue) * 0.25) });
+        }
+      } else {
+        stampScaledCap.textContent = 'stamp = X × K';
+        paintStampGrid(stampScaledHost, [[0,0,0],[0,0,0],[0,0,0]], { px: STAMP_KERNEL_PX, vmax: 1 });
+      }
+
+      // Output canvas
+      const data = trace.frames[stampState.step];
+      const opts = { cell: STAMP_OUT_CELL };
+      if (stampState.step >= 1 && stampState.step <= total) {
+        const m = trace.meta[stampState.step - 1];
+        opts.targetBox = {
+          row: m.targetR[0], col: m.targetC[0], rows: 3, cols: 3,
+        };
+      }
+      // Symmetric range across the entire final frame so colors are stable
+      let mFinal = 0;
+      const finalGrid = trace.frames[trace.frames.length - 1];
+      for (const r of finalGrid) for (const v of r) mFinal = Math.max(mFinal, Math.abs(v));
+      opts.vmax = Math.max(0.25, mFinal);
+      paintStampGrid(stampOutHost, data, opts);
+      stampOutHost.style.width = (STAMP_OUT_CELL * O) + 'px';
+      stampOutHost.style.height = (STAMP_OUT_CELL * O) + 'px';
+
+      // Narration
+      if (stampState.step === 0) {
+        stampNarrTitle.textContent = 'press → stamp to begin';
+        stampNarrBody.innerHTML = '';
+      } else if (stampState.step > total) {
+        stampNarrTitle.textContent = 'all 16 stamps placed';
+        stampNarrBody.innerHTML = '';
+      } else {
+        const m = trace.meta[stampState.step - 1];
+        const [i, j] = m.inputCell;
+        const tr = m.targetR, tc = m.targetC;
+        stampNarrTitle.textContent = 'Stamp ' + m.k + ' of 16 — input cell (' + i + ', ' + j + ')';
+        stampNarrBody.innerHTML =
+          '<div class="s6-stamp-n-row"><span class="s6-stamp-n-k">value</span>' +
+          '<span class="s6-stamp-n-v">X[' + i + '][' + j + '] = ' + m.inputValue + '</span></div>' +
+          '<div class="s6-stamp-n-row"><span class="s6-stamp-n-k">stamp</span>' +
+          '<span class="s6-stamp-n-v">' + (m.inputValue === 0 ? '0 × K = all zeros' : (m.inputValue + ' × K')) + '</span></div>' +
+          '<div class="s6-stamp-n-row"><span class="s6-stamp-n-k">target</span>' +
+          '<span class="s6-stamp-n-v">rows ' + tr[0] + '–' + tr[1] + ', cols ' + tc[0] + '–' + tc[1] +
+          ' &nbsp;(stride 2, so the next input row\'s stamps start 2 rows lower)</span></div>';
+      }
+
+      // Controls
+      stampSlider.max = String(total);
+      stampSlider.value = String(stampState.step);
+      stampOut.textContent = stampState.step + ' / ' + total;
+      stampPrevBtn.disabled = stampState.step <= 0;
+      stampNextBtn.disabled = stampState.step >= total;
+      stampResetBtn.disabled = stampState.step === 0;
+      stampPlayBtn.disabled = stampState.step >= total;
+      stampNextBtn.textContent = stampState.step === 0 ? 'first stamp →' : 'next stamp →';
+    }
+
+    function applyStampStep(n) {
+      stampState.step = Math.max(0, Math.min(16, n));
+      renderStampSection();
+    }
+    function autoStamp() {
+      if (stampState.step >= 16) { stopStampTimer(); return; }
+      applyStampStep(stampState.step + 1);
+      stampTimer = setTimeout(autoStamp, STAMP_RUN_MS);
+    }
+    stampPrevBtn.addEventListener('click', function () { stopStampTimer(); applyStampStep(stampState.step - 1); });
+    stampNextBtn.addEventListener('click', function () { stopStampTimer(); applyStampStep(stampState.step + 1); });
+    stampResetBtn.addEventListener('click', function () { stopStampTimer(); applyStampStep(0); });
+    stampPlayBtn.addEventListener('click', function () {
+      stopStampTimer();
+      applyStampStep(0);
+      stampTimer = setTimeout(autoStamp, 400);
+    });
+    stampSlider.addEventListener('input', function () {
+      stopStampTimer();
+      const v = parseInt(stampSlider.value, 10);
+      if (Number.isFinite(v)) applyStampStep(v);
+    });
+
+    /* If the user changes the input pattern in the main panel, restart
+       the stamp animation so it reflects the new input. */
+    const origStartAnimationForStep = startAnimationForStep;
+    // Wrap startAnimationForStep to also reset the stamp state when the
+    // input changes via the swatch buttons.
+    // (We can't easily detect input changes; instead we re-render the stamp
+    //  section every time the main render() runs, picking up the live input.)
+
     /* ---- Initial paint --------------------------------------------- */
     render();
+    renderStampSection();
 
     /* &run -> auto-advance to the final step over ~4s. */
     let runTimer = null;
@@ -680,6 +992,7 @@
       onEnter: function () { render(); },
       onLeave: function () {
         stopAnimation();
+        stopStampTimer();
         if (runTimer) { clearTimeout(runTimer); runTimer = null; }
       },
       onNextKey: function () {

@@ -193,6 +193,18 @@
         'Three things to understand here, then we look at how it actually does it.',
     }, hero);
 
+    /* "You are here" mini-map: highlight the pool ops on the encoder
+       side and the upsample ops on the decoder side, so the viewer sees
+       which architectural pieces this scene is talking about. */
+    const miniHost = el('div', { class: 's3-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: 'pool1, pool2 (encoder · down) ↔ up1, up2 (decoder · up)',
+      });
+      mm.setHighlight(['pool1', 'pool2', 'up1', 'up2']);
+    }
+
     const main = el('section', { class: 's3-main' }, wrap);
 
     // ---- Encoder column (pooling) ----

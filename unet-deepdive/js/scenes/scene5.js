@@ -154,6 +154,18 @@
       });
     }
 
+    /* ---- "You are here" mini-map ------------------------------------- */
+    /* Show the full U-Net diagram with the bottleneck (enc3) highlighted,
+       so the viewer sees where in the architecture this scene focuses. */
+    const miniHost = el('div', { class: 's5-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: 'enc3 / bottleneck — 16 × 16 grid, 64 channels per cell',
+      });
+      mm.setHighlight(['enc3']);
+    }
+
     /* ---- Main grid -------------------------------------------------- */
     const main = el('div', { class: 's5-main' }, wrap);
 

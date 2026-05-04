@@ -18,6 +18,7 @@
   color: var(--ink-secondary);
   margin: 0;
 }
+.s3-mini-host { align-self: flex-start; }
 
 /* Two-column main */
 .s3-main {

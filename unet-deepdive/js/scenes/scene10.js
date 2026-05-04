@@ -221,6 +221,25 @@
         'network actually learns.',
     }, hero);
 
+    /* ---- Anatomy callout: each "block" is two convs ------------------ */
+    /* The architecture diagrams elsewhere only show enc1, enc2, enc3 (and
+       dec2, dec1). But each of these is actually TWO 3×3 conv layers
+       stacked together. The picker below will let you pick conv1 or conv2
+       within each block — they exist; we just don't usually draw them. */
+    const anatomy = el('section', { class: 's10-anatomy' }, wrap);
+    el('div', { class: 's10-anatomy-eyebrow', text: 'why "conv1" and "conv2"?' }, anatomy);
+    el('p', {
+      class: 's10-anatomy-text',
+      html:
+        'In the U-Net diagrams elsewhere in the deepdive you see boxes labelled ' +
+        '<code>enc1</code>, <code>enc2</code>, <code>enc3</code>, <code>dec2</code>, ' +
+        '<code>dec1</code>. Each of those boxes is actually <strong>two</strong> 3×3 ' +
+        'convolution layers stacked back to back, named <code>conv1</code> (the first) ' +
+        'and <code>conv2</code> (the second). Same for the decoder blocks. We collapse ' +
+        'them into one box in the architecture diagrams to keep them readable, but the ' +
+        'picker below lets you inspect each one individually.',
+    }, anatomy);
+
     /* ---- Section 1: enc1_conv1 RGB filters ------------------------- */
     const sec1 = el('section', { class: 's10-section s10-rgb-section' }, wrap);
     const sec1Head = el('div', { class: 's10-sec-head' }, sec1);
@@ -263,8 +282,10 @@
       text: 'each filter sees feature maps, not colors',
     }, sec2Head);
 
-    // Layer picker.
-    const picker = el('div', { class: 's10-picker' }, sec2);
+    // Picker row layout: buttons on the left, U-Net mini-map on the right
+    // (so the viewer can see WHERE in the network they're looking).
+    const pickerWrap = el('div', { class: 's10-picker-wrap' }, sec2);
+    const picker = el('div', { class: 's10-picker' }, pickerWrap);
     el('span', { class: 's10-picker-label', text: 'layer' }, picker);
     const pickerRow = el('div', { class: 's10-picker-row' }, picker);
     const pickerBtns = [];
@@ -280,10 +301,15 @@
       });
       pickerBtns.push(btn);
     }
+    // Mini-map ("you are here").
+    const miniHost = el('div', { class: 's10-picker-mini' }, pickerWrap);
+    const miniMap = window.UNET.mountUNetMiniMap(miniHost, {
+      width: 240, label: '', title: 'you are here',
+    });
 
     // Filter-index slider (which output filter to display).
     const filterSlider = el('div', { class: 's10-filter-slider' }, sec2);
-    el('label', { for: 's10-filter-input', text: 'filter' }, filterSlider);
+    el('label', { for: 's10-filter-input', text: 'output filter #' }, filterSlider);
     const filterInput = el('input', {
       id: 's10-filter-input',
       type: 'range', min: '0', max: '0', step: '1', value: '0',
@@ -291,9 +317,9 @@
     const filterOut = el('output', {
       class: 'control-value s10-filter-out', text: '0',
     }, filterSlider);
-    el('span', {
+    const filterHelp = el('span', {
       class: 's10-filter-help',
-      text: 'showing first ' + DEEP_GRID_IN + ' input channels',
+      text: '',
     }, filterSlider);
 
     const deepGrid = el('div', { class: 's10-deep-grid' }, sec2);
@@ -379,12 +405,25 @@
     el('p', {
       class: 's10-sec-caption',
       html:
-        'After all the spatial work, classifying each pixel is just a 16-input ' +
-        'weighted sum, repeated 5 times for the 5 classes. Each bar above is ' +
-        'one feature channel\'s vote for that class &mdash; blue is "raise this ' +
-        'class", red is "suppress it". The 1×1 kernel is small precisely ' +
-        'because the encoder has already done the hard work of inventing useful ' +
-        'features.',
+        '<strong>What feeds this head?</strong> The last decoder block, <code>dec1</code>, ' +
+        'outputs <strong>16 feature channels</strong> at every one of the 64×64 pixel ' +
+        'positions. So the input to the head is a tensor of shape ' +
+        '<code>64 × 64 × 16</code> &mdash; one 16-vector per pixel. ' +
+        '(The 16 here has nothing to do with the 16×16 bottleneck. ' +
+        'It is the channel count chosen for the last decoder block.)' +
+        '<br><br>' +
+        '<strong>What does "1×1 conv" mean?</strong> A regular convolution looks at a ' +
+        '3×3 neighbourhood. A <em>1×1</em> convolution looks at one pixel only &mdash; ' +
+        'no neighbours. So the head treats each pixel independently: it takes that ' +
+        'pixel\'s 16-vector and produces 5 numbers (one per class). The mapping is a ' +
+        'linear combination: ' +
+        '<code>out[class] = w[class][0]·feat[0] + … + w[class][15]·feat[15]</code>. ' +
+        'That is 5 × 16 = 80 weights total &mdash; the entire classifier.' +
+        '<br><br>' +
+        'Each bar chart above shows one class\'s 16 weights. Blue cells are channels ' +
+        'that <em>raise</em> the class\'s score; red cells <em>suppress</em> it. The 1×1 ' +
+        'is small precisely because the encoder + decoder already invented useful ' +
+        'features &mdash; the head only has to weight them.',
     }, sec4);
 
     /* ---- Caption + step controls ----------------------------------- */
@@ -475,6 +514,22 @@
           pickerBtns[p].getAttribute('data-layer-key') === state.deepLayerKey
         );
       }
+      // Update mini-map "you are here" highlight + filter-help wording.
+      const blockKey = state.deepLayerKey.split('_')[0];   // 'enc1' / 'enc2' / 'enc3'
+      if (miniMap && typeof miniMap.setHighlight === 'function') {
+        miniMap.setHighlight([blockKey],
+          state.deepLayerKey.replace('_', ' · ') + '  (' + numOut + ' filters · ' +
+          numIn + ' input channels each)');
+      }
+      // Filter-help text: explain exactly what the slider/grid show.
+      const shown = Math.min(DEEP_GRID_IN, numIn);
+      filterHelp.innerHTML =
+        'this layer has <strong>' + numOut + '</strong> output filters; ' +
+        'each one is shaped 3×3 × <strong>' + numIn + '</strong> ' +
+        '(one 3×3 stencil per input channel). ' +
+        'Slide above to pick which output filter to inspect; the grid below ' +
+        'shows the first <strong>' + shown + '</strong> of its <strong>' + numIn +
+        '</strong> input-channel stencils.';
     }
 
     function paintTconvSection() {

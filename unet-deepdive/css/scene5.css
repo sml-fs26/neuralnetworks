@@ -16,6 +16,8 @@
 .s5-hero h1 { font-size: 28px; }
 .s5-hero .lede em { font-style: italic; color: var(--ink); }
 
+.s5-mini-host { align-self: flex-start; }
+
 /* ---------------------------------------------------------------------------
    Sample selector strip
    --------------------------------------------------------------------------- */

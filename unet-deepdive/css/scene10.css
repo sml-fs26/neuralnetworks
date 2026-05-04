@@ -119,10 +119,57 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Section 2: deeper-layer picker + stencil rows
+   Anatomy callout (sits under the hero, before section 1).
+   Explains that each "encoder block" is two conv layers internally — which
+   the U-Net architecture diagrams elsewhere don't show.
    --------------------------------------------------------------------------- */
 
+.s10-anatomy {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent, #d97a1f);
+  border-radius: 4px;
+  padding: 14px 18px;
+}
+.s10-anatomy-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: "SF Mono", Menlo, monospace;
+  color: var(--accent, #d97a1f);
+  margin-bottom: 8px;
+}
+.s10-anatomy-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.s10-anatomy-text code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.92em;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+/* ---------------------------------------------------------------------------
+   Section 2: deeper-layer picker + stencil rows + mini-map sidebar
+   --------------------------------------------------------------------------- */
+
+.s10-picker-wrap {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.s10-picker-mini {
+  flex: 0 0 auto;
+}
+
 .s10-picker {
+  flex: 1 1 360px;
   display: flex;
   align-items: center;
   gap: 10px;

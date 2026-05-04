@@ -355,3 +355,81 @@ html, body {
   flex: 0 0 auto;
 }
 .canvas-host canvas { display: block; flex: 0 0 auto; }
+
+/* ----------------------------------------------------------------------
+   U-Net mini-map. A reusable "you are here" diagram of the full U-Net,
+   used as a sidebar in scenes that focus on one specific component.
+   See window.UNET.mountUNetMiniMap.
+   ---------------------------------------------------------------------- */
+.unet-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.unet-mini-title {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+  align-self: stretch;
+  text-align: left;
+}
+.unet-mini-svg {
+  display: block;
+}
+.unet-mini-label {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ink-secondary);
+  text-align: center;
+  max-width: 220px;
+  line-height: 1.35;
+}
+
+/* Mini-map elements: rest state. */
+.unet-mini-box rect {
+  fill: var(--bg);
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+.unet-mini-box text {
+  fill: var(--ink-secondary);
+  pointer-events: none;
+}
+.unet-mini-arrow path {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 1.4;
+}
+.unet-mini-bridge path {
+  stroke: var(--rule);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.unet-mini-skip path {
+  fill: none;
+  stroke: var(--rule);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 2;
+}
+
+/* Active state — the "you are here" highlight. */
+.unet-mini-box.unet-mini-active rect {
+  fill: var(--accent, #d97a1f);
+  stroke: var(--accent, #d97a1f);
+}
+.unet-mini-box.unet-mini-active text {
+  fill: var(--bg);
+  font-weight: 600;
+}
+.unet-mini-arrow.unet-mini-active path,
+.unet-mini-skip.unet-mini-active path {
+  stroke: var(--accent, #d97a1f);
+  stroke-width: 2;
+}
