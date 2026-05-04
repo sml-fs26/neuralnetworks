@@ -17,6 +17,8 @@
   margin-bottom: 4px;
 }
 
+.s6-mini-host { align-self: flex-start; }
+
 /* ---------------------------------------------------------------------------
    Input row
    --------------------------------------------------------------------------- */
@@ -62,6 +64,57 @@
   text-align: center;
   max-width: 22ch;
   line-height: 1.45;
+}
+
+/* ----------------------------------------------------------------------
+   Per-panel "rule" explainer block (under each output canvas).
+   Replaces the one-liner sub-text with: rule + plain-language prose +
+   worked example. Left-aligned for readability; sits inside the column.
+   ---------------------------------------------------------------------- */
+.s6-rule, .s6-rule-prose, .s6-rule-eg {
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--ink);
+  max-width: 240px;
+  margin-top: 6px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.s6-rule code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.92em;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 4px;
+  display: inline-block;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.s6-rule-prose { color: var(--ink-secondary); font-style: italic; }
+.s6-rule-eg { color: var(--ink); }
+.s6-rule-eg code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.92em;
+}
+.s6-rule-k {
+  display: inline-block;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent, #d97a1f);
+  margin-right: 6px;
+}
+/* When subEl contains the rich rule blocks, override the inherited
+   uppercase/centering from .s6-panel-sub. */
+.s6-panel-sub .s6-rule,
+.s6-panel-sub .s6-rule-prose,
+.s6-panel-sub .s6-rule-eg {
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .s6-swatch-row {

@@ -16,6 +16,8 @@
 .s4-hero h1 { font-size: 28px; }
 .s4-hero .lede em { font-style: italic; color: var(--ink); }
 
+.s4-mini-host { align-self: flex-start; }
+
 /* ---------------------------------------------------------------------------
    Sample selector strip
    --------------------------------------------------------------------------- */

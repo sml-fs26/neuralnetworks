@@ -298,6 +298,16 @@
         'with a parameter the network can train.',
     }, hero);
 
+    /* ---- "You are here" mini-map ----------------------------------- */
+    const miniHost = el('div', { class: 's6-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: 'upsamplers · up1 (bottleneck → 32²) and up2 (32² → 64²)',
+      });
+      mm.setHighlight(['up1', 'up2']);
+    }
+
     /* ---- Input row -------------------------------------------------- */
     const inputRow = el('div', { class: 's6-input-row' }, wrap);
 
@@ -353,13 +363,41 @@
 
     const nearestPanel = makeOutputPanel(outRow, 'nearest',
       'nearest-neighbor',
-      'each input cell becomes a 2×2 block of itself');
+      '');
     const bilinearPanel = makeOutputPanel(outRow, 'bilinear',
       'bilinear',
-      'weighted average of the four nearest known cells');
+      '');
     const tconvPanel = makeOutputPanel(outRow, 'tconv',
       'transposed conv',
-      'the operator the U-Net actually uses');
+      '');
+
+    // Richer mechanic explainers under each panel — a rule line, a
+    // worked example, and a one-line "what does this look like" hint.
+    nearestPanel.subEl.innerHTML =
+      '<div class="s6-rule"><span class="s6-rule-k">rule</span>' +
+      '<code>output[r][c] = input[⌊r&divide;2⌋][⌊c&divide;2⌋]</code></div>' +
+      '<div class="s6-rule-prose">Each input cell is <strong>copied</strong> into ' +
+      'a 2×2 block of identical output cells &mdash; pure duplication, no math.</div>' +
+      '<div class="s6-rule-eg"><span class="s6-rule-k">example</span>' +
+      'if input[1][1] = 5, then output[2][2] = output[2][3] = output[3][2] = ' +
+      'output[3][3] = <strong>5</strong>.</div>';
+
+    bilinearPanel.subEl.innerHTML =
+      '<div class="s6-rule"><span class="s6-rule-k">rule</span>' +
+      '<code>output[r][c] = weighted avg of the 4 nearest input cells</code></div>' +
+      '<div class="s6-rule-prose">Each output cell is placed between input ' +
+      'cells; the closer it is to a given input cell, the more that cell\'s ' +
+      'value weighs. Weights add up to 1.</div>' +
+      '<div class="s6-rule-eg"><span class="s6-rule-k">example</span>' +
+      'an output cell sitting exactly halfway between input[0][1] and ' +
+      'input[0][2] gets <strong>0.5 × input[0][1] + 0.5 × input[0][2]</strong>.</div>';
+
+    tconvPanel.subEl.innerHTML =
+      '<div class="s6-rule"><span class="s6-rule-k">rule</span>' +
+      '<code>each input cell stamps a learned kernel into the output</code></div>' +
+      '<div class="s6-rule-prose">The kernel is the network\'s parameter ' +
+      '&mdash; trained, not fixed. Where stamps overlap, they sum. The whole ' +
+      'mechanic is walked through in scene&nbsp;7.</div>';
 
     /* ---- Comparison table ------------------------------------------ */
     const tableWrap = el('div', { class: 's6-table-wrap' }, wrap);

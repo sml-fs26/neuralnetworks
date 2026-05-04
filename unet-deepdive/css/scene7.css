@@ -20,6 +20,8 @@
   margin: 0;
 }
 
+.s7-mini-host { align-self: flex-start; }
+
 /* ---- Shape derivation block ---------------------------------------- */
 .s7-shape {
   background: var(--card-bg);

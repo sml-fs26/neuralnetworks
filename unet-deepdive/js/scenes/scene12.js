@@ -174,6 +174,16 @@
         'the mean of the per-pixel cross-entropies. No new machinery, only a different shape of answer.',
     }, hero);
 
+    /* ---- "You are here" mini-map ------------------------------------ */
+    const miniHost = el('div', { class: 's12-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: '1×1 output head · cross-entropy is computed on the 5 logits at every pixel',
+      });
+      mm.setHighlight(['out']);
+    }
+
     /* ---- Top row: input · ground truth · prediction ---------------- */
     const topRow = el('div', { class: 's12-toprow' }, wrap);
 

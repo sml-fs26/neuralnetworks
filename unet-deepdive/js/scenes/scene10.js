@@ -322,19 +322,13 @@
       text: '',
     }, filterSlider);
 
-    const deepGrid = el('div', { class: 's10-deep-grid' }, sec2);
-    const deepTiles = [];
-    for (let i = 0; i < DEEP_GRID_IN; i++) {
-      const row = el('div', { class: 's10-deep-row' }, deepGrid);
-      const inLabel = el('div', { class: 's10-deep-in-label' }, row);
-      el('span', { text: 'in #' + i }, inLabel);
-      const tile = el('div', {
-        class: 'canvas-host s10-deep-tile',
-        style: 'width:' + DEEP_TILE_PX + 'px;height:' + DEEP_TILE_PX + 'px;',
-        title: 'input channel ' + i,
-      }, row);
-      deepTiles.push(tile);
-    }
+    // Horizontally scrollable strip — every input-channel stencil for the
+    // selected output filter, no truncation. The user can swipe / scroll
+    // horizontally to inspect any of the layer's N input channels.
+    const deepScroll = el('div', { class: 's10-deep-scroll' }, sec2);
+    const deepGrid = el('div', { class: 's10-deep-grid' }, deepScroll);
+    // The tiles are rebuilt inside paintDeepSection so the strip always
+    // matches the active layer's numIn (16, 32, or 64 stencils).
     el('p', {
       class: 's10-sec-caption',
       html:
@@ -385,6 +379,16 @@
       class: 's10-sec-sub',
       text: '5 classes · each is a weighted sum of 16 feature channels',
     }, sec4Head);
+
+    /* "You are here" mini-map for the output head. */
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const headMiniHost = el('div', { class: 's10-head-mini' }, sec4);
+      const headMm = window.UNET.mountUNetMiniMap(headMiniHost, {
+        width: 240, title: 'you are here',
+        label: '1×1 head — turns dec1\'s 16-channel feature into 5 class scores per pixel',
+      });
+      headMm.setHighlight(['out']);
+    }
 
     const headRow = el('div', { class: 's10-head-row' }, sec4);
     const CLASS_NAMES = ['sky', 'grass', 'sun', 'tree', 'person'];
@@ -486,11 +490,11 @@
       filterInput.value = String(state.deepFilterIdx);
       filterOut.textContent = String(state.deepFilterIdx);
 
-      // Symmetric range: per-(filter, all-input-channels) so cells in this
-      // row of tiles are comparable to each other.
+      // Symmetric range across ALL input channels of the selected output
+      // filter, so the colors are directly comparable along the strip.
       const filt = layer[state.deepFilterIdx];
       let m = 0;
-      for (let c = 0; c < Math.min(DEEP_GRID_IN, numIn); c++) {
+      for (let c = 0; c < numIn; c++) {
         for (let i = 0; i < 3; i++) {
           for (let j = 0; j < 3; j++) {
             const a = Math.abs(filt[c][i][j]);
@@ -500,13 +504,21 @@
       }
       if (!m) m = 1;
 
-      for (let i = 0; i < DEEP_GRID_IN; i++) {
-        if (i < numIn) {
-          paintStencil(deepTiles[i], filt[i], m, DEEP_TILE_PX);
-        } else {
-          deepTiles[i].innerHTML = '';
-        }
+      // Rebuild the strip from scratch — every input-channel stencil gets
+      // its own little column with a label above. The horizontal scroll on
+      // .s10-deep-scroll handles any overflow when numIn is 32 or 64.
+      deepGrid.innerHTML = '';
+      for (let i = 0; i < numIn; i++) {
+        const col = el('div', { class: 's10-deep-col' }, deepGrid);
+        el('div', { class: 's10-deep-in-label', text: 'in #' + i }, col);
+        const tile = el('div', {
+          class: 'canvas-host s10-deep-tile',
+          style: 'width:' + DEEP_TILE_PX + 'px;height:' + DEEP_TILE_PX + 'px;',
+          title: 'input channel ' + i,
+        }, col);
+        paintStencil(tile, filt[i], m, DEEP_TILE_PX);
       }
+
       // Update picker active state.
       for (let p = 0; p < pickerBtns.length; p++) {
         pickerBtns[p].classList.toggle(
@@ -521,15 +533,12 @@
           state.deepLayerKey.replace('_', ' · ') + '  (' + numOut + ' filters · ' +
           numIn + ' input channels each)');
       }
-      // Filter-help text: explain exactly what the slider/grid show.
-      const shown = Math.min(DEEP_GRID_IN, numIn);
       filterHelp.innerHTML =
         'this layer has <strong>' + numOut + '</strong> output filters; ' +
         'each one is shaped 3×3 × <strong>' + numIn + '</strong> ' +
-        '(one 3×3 stencil per input channel). ' +
-        'Slide above to pick which output filter to inspect; the grid below ' +
-        'shows the first <strong>' + shown + '</strong> of its <strong>' + numIn +
-        '</strong> input-channel stencils.';
+        '(one 3×3 stencil per input channel). Slide above to pick the output ' +
+        'filter; the strip below shows <strong>all ' + numIn + '</strong> of its ' +
+        'input-channel stencils — scroll the strip horizontally to see them all.';
     }
 
     function paintTconvSection() {

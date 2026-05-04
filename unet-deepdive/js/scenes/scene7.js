@@ -263,6 +263,16 @@
         'Where stamps overlap, they sum.',
     }, hero);
 
+    // ---- "You are here" mini-map ------------------------------------
+    const miniHost = el('div', { class: 's7-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: 'transposed conv · used by up1 and up2 in the U-Net decoder',
+      });
+      mm.setHighlight(['up1', 'up2']);
+    }
+
     // ---- Shape derivation block --------------------------------------
     const shape = el('section', { class: 's7-shape' }, wrap);
     el('div', { class: 's7-shape-eyebrow', text: 'why is the output 5 × 5?' }, shape);

@@ -304,6 +304,16 @@
         'But look at <em>where</em> the no-skip model is wrong.',
     }, hero);
 
+    /* ---- "You are here" mini-map ------------------------------------- */
+    const miniHost = el('div', { class: 's9-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: 'skip connections · enc1 → dec1 (top) and enc2 → dec2 (mid)',
+      });
+      mm.setHighlight(['skip1', 'skip2']);
+    }
+
     /* ---- Sample selector ------------------------------------------- */
     const selectorStrip = el('div', { class: 's9-selector' }, wrap);
     el('div', { class: 's9-selector-label', text: 'sample' }, selectorStrip);

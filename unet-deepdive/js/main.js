@@ -18,7 +18,6 @@
     { key: 'scene4',  title: 'The encoder is the CNN you already know' },
     { key: 'scene10', title: 'What the filters look like' },
     { key: 'scene5',  title: '16×16 of pure semantics' },
-    { key: 'scene3',  title: 'Pooling collapses. The decoder must uncollapse.' },
     { key: 'scene6',  title: 'How do you make a map bigger?' },
     { key: 'scene7',  title: 'Transposed convolution: stamp instead of slide' },
     { key: 'scene8',  title: 'Walking up the right side of the U' },

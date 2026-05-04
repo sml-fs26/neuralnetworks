@@ -95,6 +95,16 @@
         'is the <em>other</em> half &mdash; what we do on the way back up.',
     }, hero);
 
+    /* ---- "You are here" mini-map ------------------------------------- */
+    const miniHost = el('div', { class: 's4-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: 'encoder · enc1 → enc2 → enc3 (with max-pool between)',
+      });
+      mm.setHighlight(['enc1', 'enc2', 'enc3', 'pool1', 'pool2']);
+    }
+
     /* ---- Sample selector ------------------------------------------- */
     const selectorStrip = el('div', { class: 's4-selector' }, wrap);
     el('div', { class: 's4-selector-label', text: 'sample' }, selectorStrip);

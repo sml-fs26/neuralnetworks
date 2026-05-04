@@ -113,6 +113,16 @@
         'boundaries. The next scene explains why.',
     }, hero);
 
+    /* ---- "You are here" mini-map ------------------------------------- */
+    const miniHost = el('div', { class: 's8-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: 'decoder · dec2, dec1, up1, up2, and the 1×1 output head',
+      });
+      mm.setHighlight(['dec2', 'dec1', 'up1', 'up2', 'out']);
+    }
+
     /* ---- Sample selector ------------------------------------------- */
     const selectorStrip = el('div', { class: 's8-selector' }, wrap);
     el('div', { class: 's8-selector-label', text: 'sample' }, selectorStrip);

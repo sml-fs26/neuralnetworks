@@ -122,6 +122,16 @@
         'Everything else in this deepdive follows from that shape change.',
     }, hero);
 
+    /* ---- "You are here" mini-map ------------------------------------ */
+    const miniHost = el('div', { class: 's1-mini-host' }, wrap);
+    if (window.UNET && typeof window.UNET.mountUNetMiniMap === 'function') {
+      const mm = window.UNET.mountUNetMiniMap(miniHost, {
+        width: 280, title: 'you are here',
+        label: '1×1 output head · turns the last decoder block into per-pixel class logits',
+      });
+      mm.setHighlight(['out']);
+    }
+
     /* ---- Two panels ------------------------------------------------- */
     const panels = el('div', { class: 's1-panels' }, wrap);
 

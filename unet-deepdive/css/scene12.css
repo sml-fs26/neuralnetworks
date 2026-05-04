@@ -16,6 +16,8 @@
 .s12-hero h1 { font-size: 28px; }
 .s12-hero .lede em { font-style: italic; color: var(--ink); }
 
+.s12-mini-host { align-self: flex-start; }
+
 /* ---------------------------------------------------------------------------
    Top row: input · ground truth · prediction
    --------------------------------------------------------------------------- */
