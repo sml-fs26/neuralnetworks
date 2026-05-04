@@ -1,329 +1,31 @@
 /* Scene 6 — How do you make a map bigger?
-   Three side-by-side upsampling panels + comparison table. */
+   Trimmed: only transposed conv. Single output panel. */
 
-.s6-root {
-  --s6-panel-bg: var(--card-bg);
-  --s6-dim: 0.40;
-}
-
+.s6-root { padding: 0 24px 32px; }
 .s6-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 8px 0 32px;
+  gap: 22px;
 }
 
-.s6-hero {
-  margin-bottom: 4px;
-}
-
-.s6-mini-host { align-self: flex-start; }
-
-/* ---------------------------------------------------------------------------
-   Input row
-   --------------------------------------------------------------------------- */
-
-.s6-input-row {
-  display: flex;
-  gap: 28px;
-  align-items: flex-start;
-  margin-top: 6px;
-}
-
-.s6-input-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  background: var(--s6-panel-bg);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  padding: 12px 16px 14px;
-}
-
-.s6-input-host,
-.s6-out-host {
-  background: var(--bg);
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-}
-
-.s6-panel-label {
-  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+/* Hero */
+.s6-hero h1 { margin-bottom: 4px; }
+.s6-hero .subtitle {
   font-style: italic;
+  color: var(--ink-secondary);
+  margin: 0 0 12px;
+  max-width: 880px;
+}
+.s6-hero .lede {
   font-size: 14px;
-  color: var(--ink-secondary);
-  text-align: center;
-}
-
-.s6-panel-sub {
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-secondary);
-  text-align: center;
-  max-width: 22ch;
-  line-height: 1.45;
-}
-
-/* ----------------------------------------------------------------------
-   Per-panel "rule" explainer block (under each output canvas).
-   Replaces the one-liner sub-text with: rule + plain-language prose +
-   worked example. Left-aligned for readability; sits inside the column.
-   ---------------------------------------------------------------------- */
-.s6-rule, .s6-rule-prose, .s6-rule-eg {
-  font-size: 11.5px;
-  line-height: 1.5;
-  text-align: left;
-  color: var(--ink);
-  max-width: 240px;
-  margin-top: 6px;
-  letter-spacing: 0;
-  text-transform: none;
-}
-.s6-rule code {
-  font-family: "SF Mono", Menlo, monospace;
-  font-size: 0.92em;
-  background: var(--bg);
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 1px 4px;
-  display: inline-block;
-  white-space: nowrap;
-  margin-top: 2px;
-}
-.s6-rule-prose { color: var(--ink-secondary); font-style: italic; }
-.s6-rule-eg { color: var(--ink); }
-.s6-rule-eg code {
-  font-family: "SF Mono", Menlo, monospace;
-  font-size: 0.92em;
-}
-.s6-rule-k {
-  display: inline-block;
-  font-family: "SF Mono", Menlo, monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--accent, #d97a1f);
-  margin-right: 6px;
-}
-/* When subEl contains the rich rule blocks, override the inherited
-   uppercase/centering from .s6-panel-sub. */
-.s6-panel-sub .s6-rule,
-.s6-panel-sub .s6-rule-prose,
-.s6-panel-sub .s6-rule-eg {
-  text-align: left;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.s6-swatch-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-  justify-content: center;
-}
-
-.s6-swatch-btn {
-  background: transparent;
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 3px;
-  cursor: pointer;
-  transition: border-color 120ms ease-out, transform 120ms ease-out;
-}
-.s6-swatch-btn:hover {
-  border-color: var(--ink-secondary);
-}
-.s6-swatch-btn.active {
-  border-color: var(--cnn-pos);
-  transform: translateY(-1px);
-}
-
-.s6-swatch-host {
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  background: var(--bg);
-}
-
-/* ---------------------------------------------------------------------------
-   Output row
-   --------------------------------------------------------------------------- */
-
-.s6-output-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  align-items: stretch;
-  margin-top: 4px;
-}
-
-.s6-out-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  background: var(--s6-panel-bg);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  padding: 12px 14px 14px;
-  opacity: var(--s6-dim);
-  transition: opacity 220ms ease-out, border-color 220ms ease-out,
-              box-shadow 220ms ease-out;
-}
-
-.s6-out-col.s6-revealed {
-  opacity: 1;
-}
-
-.s6-out-col.s6-active {
-  border-color: var(--ink-secondary);
-  box-shadow: 0 1px 0 var(--rule), 0 0 0 1px var(--rule) inset;
-}
-
-/* The transposed-conv panel gets a slightly distinguished accent on
-   reveal-of-output (step 4) to underline that this is the operator the
-   U-Net actually uses — without shouting. */
-.s6-out-col.s6-tconv-open {
-  border-color: var(--cnn-pos);
-}
-:root[data-theme="dark"] .s6-out-col.s6-tconv-open {
-  border-color: var(--cnn-pos);
-}
-
-/* ---------------------------------------------------------------------------
-   Comparison table
-   --------------------------------------------------------------------------- */
-
-.s6-table-wrap {
-  margin-top: 12px;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(4px);
-  transition: opacity 240ms ease-out, transform 240ms ease-out;
-}
-
-.s6-table-wrap.s6-visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-
-.s6-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  background: var(--card-bg);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.s6-table thead th {
-  text-align: left;
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-secondary);
-  padding: 10px 14px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--rule);
-}
-
-.s6-table tbody td {
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--rule);
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.s6-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.s6-table .s6-td-method {
-  font-family: "Iowan Old Style", Palatino, Georgia, serif;
-  font-style: italic;
-  color: var(--ink);
-}
-
-/* The "yes" emphasis on the transposed-conv learnable-? column. */
-.s6-table .s6-em {
-  color: var(--cnn-pos);
-  font-weight: 600;
-}
-
-/* The transposed-conv row is the punchline; subtle background tint. */
-.s6-table tbody tr:last-child {
-  background: linear-gradient(0deg,
-    color-mix(in srgb, var(--cnn-pos) 6%, transparent),
-    color-mix(in srgb, var(--cnn-pos) 6%, transparent));
-}
-
-/* Fallback for browsers that lack color-mix(). */
-@supports not (background: color-mix(in srgb, red, blue)) {
-  .s6-table tbody tr:last-child {
-    background: var(--bg);
-  }
-}
-
-/* ---------------------------------------------------------------------------
-   Caption + controls
-   --------------------------------------------------------------------------- */
-
-.s6-caption {
-  margin-top: 14px;
-  max-width: 64ch;
-}
-
-.s6-controls {
-  margin-top: 12px;
-}
-
-/* ---------------------------------------------------------------------------
-   Responsive
-   --------------------------------------------------------------------------- */
-
-@media (max-width: 900px) {
-  .s6-output-row {
-    grid-template-columns: 1fr;
-  }
-  .s6-input-row {
-    flex-direction: column;
-    align-items: center;
-  }
-}
-
-/* ----------------------------------------------------------------------
-   Stamp animation panel — applies scene 7's mechanic to the upsample
-   case (4×4 → 8×8 via stride-2 transposed conv).
-   ---------------------------------------------------------------------- */
-.s6-stamp-section {
-  background: var(--card-bg);
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--accent, #d97a1f);
-  border-radius: 4px;
-  padding: 18px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.s6-stamp-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--accent, #d97a1f);
-  font-family: "SF Mono", Menlo, monospace;
-}
-.s6-stamp-intro {
+  line-height: 1.6;
+  max-width: 880px;
   margin: 0;
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--ink);
 }
-.s6-stamp-intro code {
+.s6-hero .lede em { font-style: italic; color: var(--ink); }
+.s6-hero .lede code {
   font-family: "SF Mono", Menlo, monospace;
   font-size: 0.92em;
   background: var(--bg);
@@ -331,140 +33,127 @@
   border-radius: 3px;
   padding: 1px 5px;
 }
-.s6-stamp-panel {
+
+.s6-mini-host { align-self: flex-start; }
+
+/* Main: input | operator label | output */
+.s6-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 28px;
+  padding: 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
   flex-wrap: wrap;
 }
-.s6-stamp-out-row {
-  display: flex;
-  justify-content: center;
-}
-.s6-stamp-col {
+
+.s6-input-col, .s6-out-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
-.s6-stamp-cap {
-  font-size: 12px;
+
+.s6-panel-label {
   font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
   color: var(--ink);
   font-weight: 600;
 }
-.s6-stamp-sub {
+.s6-panel-sub {
   font-size: 11px;
   color: var(--ink-secondary);
   font-style: italic;
   text-align: center;
-  max-width: 260px;
+  max-width: 220px;
+  line-height: 1.45;
 }
-.s6-stamp-host {
+.s6-panel-sub code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.92em;
+}
+
+.s6-input-host, .s6-out-host {
   border: 1px solid var(--rule);
   border-radius: 3px;
   background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
-.s6-stamp-host canvas { display: block; }
-.s6-stamp-out-host { background: var(--bg); }
-.s6-stamp-op {
-  font-size: 26px;
-  color: var(--ink-secondary);
-  padding: 0 4px;
-  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+.s6-input-host canvas, .s6-out-host canvas {
+  display: block;
+  image-rendering: pixelated;
 }
-.s6-stamp-op-arrow { color: var(--accent, #d97a1f); font-size: 22px; }
 
-.s6-stamp-narr {
-  background: var(--bg);
+/* Swatch picker for input pattern */
+.s6-swatch-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.s6-swatch-btn {
+  background: transparent;
+  border: 2px solid var(--rule);
+  border-radius: 3px;
+  padding: 2px;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.s6-swatch-btn:hover { border-color: var(--ink-secondary); }
+.s6-swatch-btn.active { border-color: var(--accent, #d97a1f); }
+.s6-swatch-host {
   border: 1px solid var(--rule);
-  border-radius: 4px;
-  padding: 12px 16px;
+  background: var(--bg);
 }
-.s6-stamp-narr-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
-  font-family: "SF Mono", Menlo, monospace;
-  margin-bottom: 6px;
+.s6-swatch-host canvas {
+  display: block;
+  image-rendering: pixelated;
 }
-.s6-stamp-narr-body {
-  font-size: 13px;
-  color: var(--ink);
-  line-height: 1.45;
+
+/* Operator label between input and output */
+.s6-op-label {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-}
-.s6-stamp-n-row { display: flex; align-items: baseline; gap: 12px; }
-.s6-stamp-n-k {
-  display: inline-block;
-  width: 60px;
-  flex-shrink: 0;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-secondary);
-  font-family: "SF Mono", Menlo, monospace;
-}
-.s6-stamp-n-v { flex: 1; color: var(--ink); }
-
-.s6-stamp-controls {
-  display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  background: var(--bg);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+  gap: 6px;
+  padding: 0 12px;
 }
-.s6-stamp-ctrl-label {
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-secondary);
+.s6-op-arrow {
+  font-size: 36px;
+  color: var(--accent, #d97a1f);
+  line-height: 1;
+}
+.s6-op-name {
   font-family: "SF Mono", Menlo, monospace;
-}
-.s6-stamp-slider { width: 200px; }
-.s6-stamp-ctrl-value {
-  font-family: "SF Mono", Menlo, monospace;
-  font-size: 12px;
-  color: var(--ink);
-  min-width: 50px;
-  text-align: right;
-}
-.s6-btn {
-  font-family: inherit;
-  font-size: 12px;
-  padding: 5px 10px;
-  background: var(--bg);
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  cursor: pointer;
-}
-.s6-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.s6-btn-primary {
-  background: var(--accent, #d97a1f);
-  color: var(--bg);
-  border-color: var(--accent, #d97a1f);
+  font-size: 13px;
   font-weight: 600;
+  color: var(--ink);
+}
+.s6-op-sub {
+  font-size: 11px;
+  color: var(--ink-secondary);
+  font-style: italic;
+  text-align: center;
 }
 
-.s6-stamp-cropnote {
-  margin: 0;
-  font-size: 12px;
-  color: var(--ink-secondary);
-  line-height: 1.5;
+/* Forwarding caption at the bottom */
+.s6-caption {
   font-style: italic;
-  padding: 10px 12px;
-  background: var(--bg);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+  color: var(--ink-secondary);
+  text-align: center;
+  margin: 0;
+  line-height: 1.55;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
 }
-.s6-stamp-cropnote strong { color: var(--ink); font-style: normal; }
+.s6-caption em { color: var(--ink); }
+.s6-caption strong { color: var(--ink); font-style: normal; }
+
+/* Narrow viewport */
+@media (max-width: 820px) {
+  .s6-main { flex-direction: column; }
+  .s6-op-label { padding: 8px 0; }
+  .s6-op-arrow { transform: rotate(90deg); }
+}
