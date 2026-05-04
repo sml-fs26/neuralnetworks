@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>U-Net mini-map proposals · pick one</title>
+  <style>
+    :root[data-theme="light"] {
+      --ink: #1c1c1c;
+      --ink-secondary: #6b6b6b;
+      --rule: #d8d4ca;
+      --card-bg: #ffffff;
+      --bg: #f5f1e8;
+      --accent: #d97a1f;
+      --tensor: #7aa6c7;
+      --tensor-skip: #d2a05a;
+      --tensor-out: #b07eb0;
+    }
+    :root[data-theme="dark"] {
+      --ink: #ece8da;
+      --ink-secondary: #8a8579;
+      --rule: #383530;
+      --card-bg: #211e19;
+      --bg: #15130f;
+      --accent: #e8923f;
+      --tensor: #5b8db3;
+      --tensor-skip: #b08550;
+      --tensor-out: #9a6b9a;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Iowan Old Style", Palatino, Georgia, serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+      padding: 32px;
+    }
+    main { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 28px; }
+    h2 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-family: "SF Mono", Menlo, monospace;
+      letter-spacing: 0.02em;
+    }
+    .lede {
+      font-style: italic;
+      color: var(--ink-secondary);
+      max-width: 720px;
+      margin: 0 0 32px;
+    }
+    .proposal {
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 22px 26px;
+      margin-bottom: 22px;
+    }
+    .proposal-meta {
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-family: "SF Mono", Menlo, monospace;
+      margin-bottom: 4px;
+    }
+    .proposal-desc {
+      font-size: 13px;
+      color: var(--ink-secondary);
+      margin: 6px 0 16px;
+      max-width: 720px;
+    }
+    .proposal-body {
+      display: flex;
+      align-items: flex-start;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
+    .proposal-svg-wrap {
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+    .proposal-svg-title {
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+      font-family: "SF Mono", Menlo, monospace;
+    }
+    .proposal-svg-caption {
+      font-size: 11px;
+      font-style: italic;
+      color: var(--ink-secondary);
+      max-width: 280px;
+      text-align: center;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+    .pros-cons {
+      flex: 1 1 280px;
+      font-size: 13px;
+    }
+    .pros-cons h3 {
+      margin: 0 0 6px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+      font-family: "SF Mono", Menlo, monospace;
+    }
+    .pros-cons ul {
+      margin: 0 0 12px;
+      padding-left: 22px;
+    }
+    .pros-cons li { margin-bottom: 3px; }
+
+    /* Highlight switcher */
+    .switcher {
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 12px 18px;
+      margin-bottom: 22px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .switcher-label {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-secondary);
+    }
+    .switcher button {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      padding: 5px 10px;
+      background: var(--bg);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .switcher button.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* SVG rendering */
+    .mini-svg { display: block; }
+    .mini-bar.tensor       { fill: var(--tensor); stroke: var(--tensor); stroke-width: 0.5; }
+    .mini-bar.skip-half    { fill: var(--tensor-skip); }
+    .mini-bar.out-bar      { fill: var(--tensor-out); }
+    .mini-bar.argmax-bar   { fill: var(--ink-secondary); }
+    .mini-bar.dim          { opacity: 0.35; }
+    .mini-bar-ring         { fill: none; stroke: var(--accent); stroke-width: 2.4; }
+    .mini-bar-glow         { fill: var(--accent); opacity: 0.18; }
+
+    .mini-arrow.conv      { stroke: #5aa64a; stroke-width: 1.2; fill: none; }
+    .mini-arrow.pool      { stroke: #c95a5a; stroke-width: 1.4; fill: none; }
+    .mini-arrow.upconv    { stroke: #9067c2; stroke-width: 1.4; fill: none; }
+    .mini-arrow.onexone   { stroke: #3a8fb7; stroke-width: 1.2; fill: none; }
+    .mini-arrow.argmax    { stroke: var(--ink-secondary); stroke-width: 0.8; stroke-dasharray: 2 2; fill: none; }
+    .mini-arrow.skip      { stroke: var(--ink-secondary); stroke-width: 1; stroke-dasharray: 3 2; fill: none; opacity: 0.7; }
+    .mini-arrow.concat    { stroke: var(--ink-secondary); stroke-width: 1; fill: none; opacity: 0.85; }
+    .mini-arrow.dim       { opacity: 0.25; }
+    .mini-arrow.lit       { stroke: var(--accent); stroke-width: 2.2; opacity: 1; stroke-dasharray: none; }
+
+    .mini-label {
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 8px;
+      fill: var(--ink-secondary);
+    }
+
+    /* Theme toggle */
+    .theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 11px;
+      padding: 6px 12px;
+      background: var(--card-bg);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="theme-toggle" type="button">theme</button>
+
+  <main>
+    <h1>U-Net mini-map — pick a style</h1>
+    <p class="lede">
+      The mini-map should echo scene 0's bar diagram so the viewer recognises it
+      instantly. Below are four candidates, all rendered with the same example
+      highlight so you can compare like-for-like. Each is what would actually
+      sit inside a "you are here" sidebar (≈ 280 px wide).
+    </p>
+
+    <div class="switcher">
+      <span class="switcher-label">Highlight:</span>
+      <button data-h="bottleneck" class="active">bottleneck</button>
+      <button data-h="encoder">encoder</button>
+      <button data-h="decoder">decoder</button>
+      <button data-h="skips">skip connections</button>
+      <button data-h="upsamples">upsamples</button>
+      <button data-h="out">output head</button>
+      <button data-h="enc1block">enc1 block</button>
+    </div>
+
+    <!-- Proposal A -->
+    <section class="proposal">
+      <div class="proposal-meta">proposal A</div>
+      <h2>Faithful miniature of scene 0</h2>
+      <p class="proposal-desc">
+        Every one of scene 0's 19 tensor bars, every colored arrow, no labels,
+        no legend. Highlights = bright orange ring + soft glow + dimmed
+        background. Most information; closest match to scene 0's silhouette.
+      </p>
+      <div class="proposal-body">
+        <div class="proposal-svg-wrap">
+          <span class="proposal-svg-title">~280 px wide</span>
+          <div id="prop-a"></div>
+          <span class="proposal-svg-caption" id="cap-a">bottleneck — enc3.conv2</span>
+        </div>
+        <div class="pros-cons">
+          <h3>Strengths</h3>
+          <ul>
+            <li>Maximum visual continuity with scene 0 — same bar widths, heights, arrows.</li>
+            <li>Shows that each block is two convs (two adjacent bars).</li>
+            <li>Concat tensors are split-coloured exactly like scene 0.</li>
+          </ul>
+          <h3>Trade-offs</h3>
+          <ul>
+            <li>19 elements at this size = visually busy.</li>
+            <li>Some bars (input, output, 1×1) are very small.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Proposal B -->
+    <section class="proposal">
+      <div class="proposal-meta">proposal B</div>
+      <h2>Block-level miniature</h2>
+      <p class="proposal-desc">
+        One bar per block (the conv1+conv2 pair collapses into a single bar
+        with the block's final shape). 5 main blocks + ups + concats + 1×1
+        head + output. ~10 visual tensors, larger individually. Same colored
+        arrows.
+      </p>
+      <div class="proposal-body">
+        <div class="proposal-svg-wrap">
+          <span class="proposal-svg-title">~280 px wide</span>
+          <div id="prop-b"></div>
+          <span class="proposal-svg-caption" id="cap-b">bottleneck — enc3</span>
+        </div>
+        <div class="pros-cons">
+          <h3>Strengths</h3>
+          <ul>
+            <li>Cleaner; each bar is bigger and easier to see.</li>
+            <li>Still preserves the U-shape silhouette and bar-geometry rule (height ∝ spatial, width ∝ channels).</li>
+            <li>Matches the "block-level" mental model the rest of the deepdive uses (`enc1`, `enc2`, …).</li>
+          </ul>
+          <h3>Trade-offs</h3>
+          <ul>
+            <li>Hides the "two convs per block" fact (scene 4 / scene 10 explain it explicitly).</li>
+            <li>One bar = one block = the same simplification scene 0 was designed to <em>fight</em>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Proposal C -->
+    <section class="proposal">
+      <div class="proposal-meta">proposal C</div>
+      <h2>Block-level with labels</h2>
+      <p class="proposal-desc">
+        Same as B but each bar gets a tiny label (`enc1`, `enc2`, …). Easier
+        to anchor when the highlight changes.
+      </p>
+      <div class="proposal-body">
+        <div class="proposal-svg-wrap">
+          <span class="proposal-svg-title">~280 px wide</span>
+          <div id="prop-c"></div>
+          <span class="proposal-svg-caption" id="cap-c">bottleneck — enc3</span>
+        </div>
+        <div class="pros-cons">
+          <h3>Strengths</h3>
+          <ul>
+            <li>Labels make the highlight legible without the caption underneath.</li>
+            <li>Reads as "shrunken textbook diagram".</li>
+          </ul>
+          <h3>Trade-offs</h3>
+          <ul>
+            <li>Tiny text at this size. May force the SVG to be a bit wider.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Proposal D -->
+    <section class="proposal">
+      <div class="proposal-meta">proposal D</div>
+      <h2>19-bar silhouette, no arrows</h2>
+      <p class="proposal-desc">
+        All 19 bars from scene 0, but the operation arrows are stripped out
+        — only the bar silhouette remains. Highlights still work via the
+        orange ring + glow. The most "thumbnail" of the four; reads almost
+        like a logo of the architecture.
+      </p>
+      <div class="proposal-body">
+        <div class="proposal-svg-wrap">
+          <span class="proposal-svg-title">~280 px wide</span>
+          <div id="prop-d"></div>
+          <span class="proposal-svg-caption" id="cap-d">bottleneck — enc3.conv2</span>
+        </div>
+        <div class="pros-cons">
+          <h3>Strengths</h3>
+          <ul>
+            <li>Cleanest silhouette of scene 0.</li>
+            <li>Less visual noise — the orange highlight pops more.</li>
+          </ul>
+          <h3>Trade-offs</h3>
+          <ul>
+            <li>No operations visible — viewer can't see "this is where pool happens".</li>
+            <li>Skip arcs gone, so the U-Net's signature shortcut is invisible.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <p class="lede">
+      My recommendation: <strong>proposal C</strong> (block-level with labels).
+      It carries enough visual continuity with scene 0 (same Ronneberger bars,
+      same colors, same U-shape) without the noise of all 19 elements at thumbnail
+      scale, and the labels make the highlight unambiguous at a glance. Proposal A
+      is the most faithful but probably too dense at 280 px wide.
+    </p>
+  </main>
+
+  <script>
+    /* ---------- shared data ---------- */
+    const TENSORS = [
+      { id: 't0',  block: 'input',  row: 1, spatial: 64, channels: 3,  op: 'input',   short: 'in'   },
+      { id: 't1',  block: 'enc1',   row: 1, spatial: 64, channels: 16, op: 'conv',    short: ''     },
+      { id: 't2',  block: 'enc1',   row: 1, spatial: 64, channels: 16, op: 'conv',    short: 'enc1' },
+      { id: 't3',  block: 'pool',   row: 2, spatial: 32, channels: 16, op: 'pool',    short: ''     },
+      { id: 't4',  block: 'enc2',   row: 2, spatial: 32, channels: 32, op: 'conv',    short: ''     },
+      { id: 't5',  block: 'enc2',   row: 2, spatial: 32, channels: 32, op: 'conv',    short: 'enc2' },
+      { id: 't6',  block: 'pool',   row: 3, spatial: 16, channels: 32, op: 'pool',    short: ''     },
+      { id: 't7',  block: 'enc3',   row: 3, spatial: 16, channels: 64, op: 'conv',    short: ''     },
+      { id: 't8',  block: 'enc3',   row: 3, spatial: 16, channels: 64, op: 'conv',    short: 'enc3' },
+      { id: 't9',  block: 'up2',    row: 2, spatial: 32, channels: 32, op: 'upconv',  short: 'up2'  },
+      { id: 't10', block: 'cat2',   row: 2, spatial: 32, channels: 64, op: 'concat',  short: ''     },
+      { id: 't11', block: 'dec2',   row: 2, spatial: 32, channels: 32, op: 'conv',    short: ''     },
+      { id: 't12', block: 'dec2',   row: 2, spatial: 32, channels: 32, op: 'conv',    short: 'dec2' },
+      { id: 't13', block: 'up1',    row: 1, spatial: 64, channels: 16, op: 'upconv',  short: 'up1'  },
+      { id: 't14', block: 'cat1',   row: 1, spatial: 64, channels: 32, op: 'concat',  short: ''     },
+      { id: 't15', block: 'dec1',   row: 1, spatial: 64, channels: 16, op: 'conv',    short: ''     },
+      { id: 't16', block: 'dec1',   row: 1, spatial: 64, channels: 16, op: 'conv',    short: 'dec1' },
+      { id: 't17', block: 'out',    row: 1, spatial: 64, channels: 5,  op: 'onexone', short: '1×1'  },
+      { id: 't18', block: 'output', row: 1, spatial: 64, channels: 1,  op: 'argmax',  short: 'out'  },
+    ];
+
+    const HIGHLIGHTS = {
+      bottleneck: { ids: ['t8'], blocks: ['enc3'] },
+      encoder:    { ids: ['t1','t2','t3','t4','t5','t6','t7','t8'], blocks: ['enc1','enc2','enc3','pool'] },
+      decoder:    { ids: ['t9','t10','t11','t12','t13','t14','t15','t16'], blocks: ['up2','cat2','dec2','up1','cat1','dec1'] },
+      skips:      { ids: ['t10','t14'], blocks: ['cat1','cat2'], extras: ['skip'] },
+      upsamples:  { ids: ['t9','t13'], blocks: ['up1','up2'] },
+      out:        { ids: ['t17','t18'], blocks: ['out','output'] },
+      enc1block:  { ids: ['t1','t2'], blocks: ['enc1'] },
+    };
+
+    /* ---------- layout: tensor positions ---------- */
+    function computeFullLayout(W, H) {
+      // For Proposal A and D — the full 19-bar arrangement.
+      const padX = 6, padY = 14;
+      const innerW = W - 2*padX, innerH = H - 2*padY;
+      const rowGap = 6;
+      // Bar height proportional to spatial side.
+      function barH(spatial) {
+        const maxH = (innerH - 2*rowGap) * 0.55;
+        return Math.max(6, maxH * (spatial / 64));
+      }
+      // Bar width proportional to channel count.
+      function barW(ch) { return 2.5 + ch * 0.18; }
+      // Row Y centres (top = row 1, mid = row 2, bot = row 3)
+      const r1H = barH(64), r2H = barH(32), r3H = barH(16);
+      const r1Y = padY;
+      const r2Y = r1Y + r1H + rowGap;
+      const r3Y = r2Y + r2H + rowGap;
+      const rowYTop = { 1: r1Y, 2: r2Y, 3: r3Y };
+      const rowH = { 1: r1H, 2: r2H, 3: r3H };
+
+      // Place tensors. Encoder side (left): tensors with op !== upconv && row >= 1 && index <= 8.
+      // Then decoder side: tensors index >= 9.
+      // We split each row's space between left and right with a gap in the middle.
+      const leftIdsByRow = { 1: ['t0','t1','t2'], 2: ['t3','t4','t5'], 3: ['t6','t7','t8'] };
+      const rightIdsByRow = { 1: ['t13','t14','t15','t16','t17','t18'], 2: ['t9','t10','t11','t12'], 3: [] };
+
+      const pos = {};
+      for (const r of [1, 2, 3]) {
+        const leftIds = leftIdsByRow[r];
+        const rightIds = rightIdsByRow[r];
+        const widths = id => barW(TENSORS.find(t => t.id === id).channels);
+        const leftW = leftIds.reduce((s,id) => s + widths(id) + 4, 0);
+        const rightW = rightIds.reduce((s,id) => s + widths(id) + 4, 0);
+        // Left column starts at left edge, right column ends at right edge.
+        let x = padX;
+        for (const id of leftIds) {
+          const t = TENSORS.find(tt => tt.id === id);
+          const w = widths(id), h = barH(t.spatial);
+          // Vertically center on row centre.
+          const y = rowYTop[r] + (rowH[r] - h) / 2;
+          pos[id] = { x, y, w, h };
+          x += w + 4;
+        }
+        x = W - padX;
+        for (let i = rightIds.length - 1; i >= 0; i--) {
+          const id = rightIds[i];
+          const t = TENSORS.find(tt => tt.id === id);
+          const w = widths(id), h = barH(t.spatial);
+          x -= w;
+          const y = rowYTop[r] + (rowH[r] - h) / 2;
+          pos[id] = { x, y, w, h };
+          x -= 4;
+        }
+      }
+      return pos;
+    }
+
+    function computeBlockLayout(W, H) {
+      // For Proposal B and C — collapsed to one bar per block.
+      // 10 visual elements: input, enc1, enc2, enc3 (bottleneck), up2, dec2, up1, dec1, 1x1, out
+      // (concats are implied; we draw skips as arcs into dec1/dec2 directly.)
+      const padX = 6, padY = 14;
+      const innerW = W - 2*padX, innerH = H - 2*padY;
+      const rowGap = 6;
+      function barH(spatial) {
+        const maxH = (innerH - 2*rowGap) * 0.55;
+        return Math.max(8, maxH * (spatial / 64));
+      }
+      function barW(ch, base) { return (base || 4) + ch * 0.22; }
+      const r1H = barH(64), r2H = barH(32), r3H = barH(16);
+      const r1Y = padY;
+      const r2Y = r1Y + r1H + rowGap;
+      const r3Y = r2Y + r2H + rowGap;
+      const rowYTop = { 1: r1Y, 2: r2Y, 3: r3Y };
+      const rowH = { 1: r1H, 2: r2H, 3: r3H };
+
+      // Block-level tensors (the canonical "boxes" people draw):
+      const ELEMENTS = [
+        { id: 'b-input', row: 1, spatial: 64, channels: 3,  side: 'left',  short: 'in'   },
+        { id: 'b-enc1',  row: 1, spatial: 64, channels: 16, side: 'left',  short: 'enc1' },
+        { id: 'b-enc2',  row: 2, spatial: 32, channels: 32, side: 'left',  short: 'enc2' },
+        { id: 'b-enc3',  row: 3, spatial: 16, channels: 64, side: 'left',  short: 'enc3' },
+        { id: 'b-dec2',  row: 2, spatial: 32, channels: 32, side: 'right', short: 'dec2' },
+        { id: 'b-dec1',  row: 1, spatial: 64, channels: 16, side: 'right', short: 'dec1' },
+        { id: 'b-1x1',   row: 1, spatial: 64, channels: 5,  side: 'right', short: '1×1'  },
+        { id: 'b-out',   row: 1, spatial: 64, channels: 1,  side: 'right', short: 'out'  },
+      ];
+      const pos = {};
+      for (const r of [1, 2, 3]) {
+        const left = ELEMENTS.filter(e => e.row === r && e.side === 'left');
+        const right = ELEMENTS.filter(e => e.row === r && e.side === 'right');
+        let x = padX;
+        for (const e of left) {
+          const w = barW(e.channels), h = barH(e.spatial);
+          const y = rowYTop[r] + (rowH[r] - h) / 2;
+          pos[e.id] = { x, y, w, h, short: e.short, ch: e.channels, sp: e.spatial };
+          x += w + 6;
+        }
+        x = W - padX;
+        for (let i = right.length - 1; i >= 0; i--) {
+          const e = right[i];
+          const w = barW(e.channels), h = barH(e.spatial);
+          x -= w;
+          const y = rowYTop[r] + (rowH[r] - h) / 2;
+          pos[e.id] = { x, y, w, h, short: e.short, ch: e.channels, sp: e.spatial };
+          x -= 6;
+        }
+      }
+      return { pos, ELEMENTS };
+    }
+
+    /* ---------- helpers ---------- */
+    function svg(tag, attrs, parent) {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k]);
+      if (parent) parent.appendChild(el);
+      return el;
+    }
+
+    function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+    /* ---------- proposal A: faithful miniature ---------- */
+    function renderProposalA(host, highlightKey) {
+      clear(host);
+      const W = 280, H = 110;
+      const root = svg('svg', {
+        xmlns: 'http://www.w3.org/2000/svg',
+        viewBox: `0 0 ${W} ${H}`,
+        width: String(W), height: String(H),
+        class: 'mini-svg',
+      }, host);
+
+      const pos = computeFullLayout(W, H);
+      const hl = HIGHLIGHTS[highlightKey] || HIGHLIGHTS.bottleneck;
+      const lit = new Set(hl.ids);
+
+      // Arrows first (under bars). Conv: between adjacent bars in same row.
+      // Pool: t2->t3, t5->t6. Up: t8->t9 (bottleneck->up2), t12->t13 (dec2->up1).
+      // Skip: t2->t14, t5->t10. Concat short: t9->t10, t13->t14. 1x1: t16->t17. Argmax: t17->t18.
+      const OPS = [
+        { from: 't0', to: 't1',  type: 'conv' },
+        { from: 't1', to: 't2',  type: 'conv' },
+        { from: 't2', to: 't3',  type: 'pool' },
+        { from: 't3', to: 't4',  type: 'conv' },
+        { from: 't4', to: 't5',  type: 'conv' },
+        { from: 't5', to: 't6',  type: 'pool' },
+        { from: 't6', to: 't7',  type: 'conv' },
+        { from: 't7', to: 't8',  type: 'conv' },
+        { from: 't8', to: 't9',  type: 'upconv' },
+        { from: 't9', to: 't10', type: 'concat' },
+        { from: 't10', to: 't11', type: 'conv' },
+        { from: 't11', to: 't12', type: 'conv' },
+        { from: 't12', to: 't13', type: 'upconv' },
+        { from: 't13', to: 't14', type: 'concat' },
+        { from: 't14', to: 't15', type: 'conv' },
+        { from: 't15', to: 't16', type: 'conv' },
+        { from: 't16', to: 't17', type: 'onexone' },
+        { from: 't17', to: 't18', type: 'argmax' },
+      ];
+      const SKIPS = [
+        { from: 't2', to: 't14' },
+        { from: 't5', to: 't10' },
+      ];
+
+      // Draw skips first (under bars)
+      const dimAll = lit.size > 0;
+      for (const sk of SKIPS) {
+        const a = pos[sk.from], b = pos[sk.to];
+        const ax = a.x + a.w, ay = a.y + 1;
+        const bx = b.x, by = b.y + 1;
+        const peak = Math.min(ay, by) - 8;
+        const path = `M ${ax} ${ay} C ${ax+12} ${peak}, ${bx-12} ${peak}, ${bx} ${by}`;
+        const skipLit = hl.extras && hl.extras.includes('skip');
+        svg('path', {
+          d: path,
+          class: 'mini-arrow skip ' + (skipLit ? 'lit' : (dimAll ? 'dim' : '')),
+        }, root);
+      }
+
+      for (const op of OPS) {
+        const a = pos[op.from], b = pos[op.to];
+        const x1 = a.x + a.w, y1 = a.y + a.h/2;
+        const x2 = b.x,       y2 = b.y + b.h/2;
+        let pathD;
+        if (op.type === 'pool' || op.type === 'upconv') {
+          pathD = `M ${x1} ${y1} C ${x1+6} ${y1}, ${x2-6} ${y2}, ${x2} ${y2}`;
+        } else {
+          pathD = `M ${x1} ${y1} L ${x2} ${y2}`;
+        }
+        const opLit = (lit.has(op.from) && lit.has(op.to)) ? 'lit' : (dimAll ? 'dim' : '');
+        svg('path', { d: pathD, class: 'mini-arrow ' + op.type + ' ' + opLit }, root);
+      }
+
+      // Bars on top
+      for (const t of TENSORS) {
+        const p = pos[t.id];
+        const isLit = lit.has(t.id);
+        let cls = 'mini-bar tensor';
+        if (t.op === 'concat') {
+          // Split-color: front half tensor color, back half skip color.
+          const halfH = p.h / 2;
+          svg('rect', { x: p.x, y: p.y, width: p.w, height: halfH, class: 'mini-bar tensor ' + (dimAll && !isLit ? 'dim' : '') }, root);
+          svg('rect', { x: p.x, y: p.y + halfH, width: p.w, height: halfH, class: 'mini-bar skip-half ' + (dimAll && !isLit ? 'dim' : '') }, root);
+        } else if (t.op === 'argmax') {
+          cls = 'mini-bar argmax-bar';
+          svg('rect', { x: p.x, y: p.y, width: p.w, height: p.h, class: cls + (dimAll && !isLit ? ' dim' : '') }, root);
+        } else if (t.op === 'onexone') {
+          cls = 'mini-bar out-bar';
+          svg('rect', { x: p.x, y: p.y, width: p.w, height: p.h, class: cls + (dimAll && !isLit ? ' dim' : '') }, root);
+        } else {
+          svg('rect', { x: p.x, y: p.y, width: p.w, height: p.h, class: cls + (dimAll && !isLit ? ' dim' : '') }, root);
+        }
+        if (isLit) {
+          svg('rect', { x: p.x - 1.5, y: p.y - 1.5, width: p.w + 3, height: p.h + 3, rx: 2, class: 'mini-bar-glow' }, root);
+          svg('rect', { x: p.x - 1.2, y: p.y - 1.2, width: p.w + 2.4, height: p.h + 2.4, rx: 2, class: 'mini-bar-ring' }, root);
+        }
+      }
+    }
+
+    /* ---------- proposal B: block-level miniature ---------- */
+    function renderProposalB(host, highlightKey, withLabels) {
+      clear(host);
+      const W = 280, H = 130;
+      const root = svg('svg', {
+        xmlns: 'http://www.w3.org/2000/svg',
+        viewBox: `0 0 ${W} ${H}`,
+        width: String(W), height: String(H),
+        class: 'mini-svg',
+      }, host);
+
+      const layout = computeBlockLayout(W, H);
+      const pos = layout.pos;
+      const hl = HIGHLIGHTS[highlightKey] || HIGHLIGHTS.bottleneck;
+      const blocks = new Set(hl.blocks);
+
+      // Map highlight blocks to which b-* ids should light up.
+      const blockToId = {
+        input: 'b-input', enc1: 'b-enc1', enc2: 'b-enc2', enc3: 'b-enc3',
+        dec2: 'b-dec2', dec1: 'b-dec1', out: 'b-1x1', output: 'b-out',
+      };
+      const lit = new Set();
+      for (const blk of blocks) if (blockToId[blk]) lit.add(blockToId[blk]);
+      // Special handling for upsamples / pool: light the OPS only, not boxes.
+      // Also if encoder/decoder, light all related boxes.
+      if (hl.blocks && hl.blocks.includes('up1')) lit.add('b-dec1');
+      if (hl.blocks && hl.blocks.includes('up2')) lit.add('b-dec2');
+      // For "skips" highlight, we light dec1 and dec2 (the receivers).
+      if (hl.blocks && (hl.blocks.includes('cat1') || hl.blocks.includes('cat2'))) {
+        lit.add('b-dec1'); lit.add('b-dec2');
+      }
+
+      // Block-level OPS (between bars).
+      const OPS = [
+        { from: 'b-input', to: 'b-enc1', type: 'conv' },
+        { from: 'b-enc1',  to: 'b-enc2', type: 'pool' },
+        { from: 'b-enc2',  to: 'b-enc3', type: 'pool' },
+        { from: 'b-enc3',  to: 'b-dec2', type: 'upconv' },
+        { from: 'b-dec2',  to: 'b-dec1', type: 'upconv' },
+        { from: 'b-dec1',  to: 'b-1x1',  type: 'onexone' },
+        { from: 'b-1x1',   to: 'b-out',  type: 'argmax' },
+      ];
+      const SKIPS = [
+        { from: 'b-enc1', to: 'b-dec1' },
+        { from: 'b-enc2', to: 'b-dec2' },
+      ];
+
+      const dimAll = lit.size > 0;
+      const skipLit = hl.extras && hl.extras.includes('skip') ||
+        (highlightKey === 'skips');
+      for (const sk of SKIPS) {
+        const a = pos[sk.from], b = pos[sk.to];
+        const ax = a.x + a.w, ay = a.y + 2;
+        const bx = b.x, by = b.y + 2;
+        const peak = Math.min(ay, by) - 12;
+        const path = `M ${ax} ${ay} C ${ax+18} ${peak}, ${bx-18} ${peak}, ${bx} ${by}`;
+        svg('path', {
+          d: path,
+          class: 'mini-arrow skip ' + (skipLit ? 'lit' : (dimAll ? 'dim' : '')),
+        }, root);
+      }
+      for (const op of OPS) {
+        const a = pos[op.from], b = pos[op.to];
+        const x1 = a.x + a.w, y1 = a.y + a.h/2;
+        const x2 = b.x,       y2 = b.y + b.h/2;
+        let pathD;
+        if (op.type === 'pool' || op.type === 'upconv') {
+          pathD = `M ${x1} ${y1} C ${x1+10} ${y1}, ${x2-10} ${y2}, ${x2} ${y2}`;
+        } else {
+          pathD = `M ${x1} ${y1} L ${x2} ${y2}`;
+        }
+        const opLit = (lit.has(op.from) && lit.has(op.to)) ? 'lit' : (dimAll ? 'dim' : '');
+        svg('path', { d: pathD, class: 'mini-arrow ' + op.type + ' ' + opLit }, root);
+      }
+
+      // Bars
+      for (const e of layout.ELEMENTS) {
+        const p = pos[e.id];
+        const isLit = lit.has(e.id);
+        let cls = 'mini-bar tensor';
+        if (e.id === 'b-1x1') cls = 'mini-bar out-bar';
+        if (e.id === 'b-out') cls = 'mini-bar argmax-bar';
+        svg('rect', {
+          x: p.x, y: p.y, width: p.w, height: p.h, rx: 1,
+          class: cls + (dimAll && !isLit ? ' dim' : ''),
+        }, root);
+        if (isLit) {
+          svg('rect', { x: p.x - 1.5, y: p.y - 1.5, width: p.w + 3, height: p.h + 3, rx: 2, class: 'mini-bar-glow' }, root);
+          svg('rect', { x: p.x - 1.2, y: p.y - 1.2, width: p.w + 2.4, height: p.h + 2.4, rx: 2, class: 'mini-bar-ring' }, root);
+        }
+        // Labels: only for the 5 main blocks (enc1/enc2/enc3/dec1/dec2)
+        // to avoid collisions between adjacent narrow bars (in / 1×1 / out
+        // are positionally obvious — input on far left, head + argmax
+        // on far right).
+        const LABELED = new Set(['enc1','enc2','enc3','dec1','dec2']);
+        if (withLabels && p.short && LABELED.has(p.short)) {
+          const tx = p.x + p.w/2;
+          const ty = p.y - 3;
+          svg('text', {
+            x: String(tx), y: String(ty),
+            'text-anchor': 'middle',
+            class: 'mini-label',
+          }, root).textContent = p.short;
+        }
+      }
+    }
+
+    /* ---------- proposal D: 19-bar silhouette, no arrows ---------- */
+    function renderProposalD(host, highlightKey) {
+      clear(host);
+      const W = 280, H = 110;
+      const root = svg('svg', {
+        xmlns: 'http://www.w3.org/2000/svg',
+        viewBox: `0 0 ${W} ${H}`,
+        width: String(W), height: String(H),
+        class: 'mini-svg',
+      }, host);
+      const pos = computeFullLayout(W, H);
+      const hl = HIGHLIGHTS[highlightKey] || HIGHLIGHTS.bottleneck;
+      const lit = new Set(hl.ids);
+      const dimAll = lit.size > 0;
+
+      for (const t of TENSORS) {
+        const p = pos[t.id];
+        const isLit = lit.has(t.id);
+        let cls = 'mini-bar tensor';
+        if (t.op === 'concat') {
+          const halfH = p.h / 2;
+          svg('rect', { x: p.x, y: p.y, width: p.w, height: halfH, class: 'mini-bar tensor ' + (dimAll && !isLit ? 'dim' : '') }, root);
+          svg('rect', { x: p.x, y: p.y + halfH, width: p.w, height: halfH, class: 'mini-bar skip-half ' + (dimAll && !isLit ? 'dim' : '') }, root);
+        } else if (t.op === 'argmax') {
+          cls = 'mini-bar argmax-bar';
+          svg('rect', { x: p.x, y: p.y, width: p.w, height: p.h, class: cls + (dimAll && !isLit ? ' dim' : '') }, root);
+        } else if (t.op === 'onexone') {
+          cls = 'mini-bar out-bar';
+          svg('rect', { x: p.x, y: p.y, width: p.w, height: p.h, class: cls + (dimAll && !isLit ? ' dim' : '') }, root);
+        } else {
+          svg('rect', { x: p.x, y: p.y, width: p.w, height: p.h, class: cls + (dimAll && !isLit ? ' dim' : '') }, root);
+        }
+        if (isLit) {
+          svg('rect', { x: p.x - 1.5, y: p.y - 1.5, width: p.w + 3, height: p.h + 3, rx: 2, class: 'mini-bar-glow' }, root);
+          svg('rect', { x: p.x - 1.2, y: p.y - 1.2, width: p.w + 2.4, height: p.h + 2.4, rx: 2, class: 'mini-bar-ring' }, root);
+        }
+      }
+    }
+
+    /* ---------- captions per highlight ---------- */
+    const CAPTIONS = {
+      bottleneck: { a: 'bottleneck — enc3.conv2 (16² × 64)', b: 'bottleneck — enc3', c: 'bottleneck — enc3', d: 'bottleneck — enc3.conv2' },
+      encoder:    { a: 'encoder side — input → enc1, enc2, enc3 (with pools)', b: 'encoder — enc1, enc2, enc3', c: 'encoder — enc1, enc2, enc3', d: 'encoder side' },
+      decoder:    { a: 'decoder side — up2, dec2, up1, dec1', b: 'decoder — dec2, dec1', c: 'decoder — dec2, dec1', d: 'decoder side' },
+      skips:      { a: 'skip arcs — enc1.c2 → cat1, enc2.c2 → cat2', b: 'skip arcs — enc1 → dec1, enc2 → dec2', c: 'skip arcs — enc1 → dec1, enc2 → dec2', d: 'concat tensors only (no arc here)' },
+      upsamples:  { a: 'upsamples — up2 (16² → 32²) and up1 (32² → 64²)', b: 'upsamples land at dec2 and dec1', c: 'upsamples land at dec2 and dec1', d: 'upsample tensors — up2, up1' },
+      out:        { a: '1×1 head + argmax (logits → output)', b: '1×1 head + output', c: '1×1 head + output', d: '1×1 head + argmax' },
+      enc1block:  { a: 'enc1 block — both convs (enc1.c1 + enc1.c2)', b: 'enc1 block', c: 'enc1 block', d: 'enc1 block — both convs' },
+    };
+
+    /* ---------- wire up ---------- */
+    let activeKey = 'bottleneck';
+    function renderAll() {
+      renderProposalA(document.getElementById('prop-a'), activeKey);
+      renderProposalB(document.getElementById('prop-b'), activeKey, false);
+      renderProposalB(document.getElementById('prop-c'), activeKey, true);
+      renderProposalD(document.getElementById('prop-d'), activeKey);
+      const cap = CAPTIONS[activeKey];
+      document.getElementById('cap-a').textContent = cap.a;
+      document.getElementById('cap-b').textContent = cap.b;
+      document.getElementById('cap-c').textContent = cap.c;
+      document.getElementById('cap-d').textContent = cap.d;
+    }
+
+    document.querySelectorAll('.switcher button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.switcher button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeKey = btn.getAttribute('data-h');
+        renderAll();
+      });
+    });
+
+    // Theme toggle
+    const themeBtn = document.getElementById('theme-toggle');
+    const themeKey = 'unet-minimap-proposals.theme';
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem(themeKey); } catch (e) {}
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    themeBtn.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme') || 'light';
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem(themeKey, next); } catch (e) {}
+    });
+
+    renderAll();
+  </script>
+</body>
+</html>
