@@ -1,0 +1,288 @@
+/* Scene 2 — What a segmentation dataset looks like.
+
+   Layout:
+     hero
+     sample gallery (6 image|label pairs in a wrap-grid)
+     class legend
+     "data generator" inset (single bigger image|label pair + button)
+     histogram + caveat
+     caption + controls */
+
+.s2-root .s2-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.s2-hero h1 { font-size: 28px; }
+.s2-hero .lede em {
+  font-style: italic;
+  color: var(--ink);
+}
+
+.s2-section-title {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  margin: 0 0 8px;
+}
+
+/* ---------------------------------------------------------------------------
+   Sample gallery
+   --------------------------------------------------------------------------- */
+
+.s2-gallery-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 12px 14px 14px;
+}
+
+.s2-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.s2-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  padding: 6px 4px 8px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.s2-pair-idx {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  align-self: flex-start;
+  padding-left: 4px;
+}
+
+.s2-pair-imgs {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.s2-pair-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.s2-pair-sub {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.s2-tile-host canvas {
+  image-rendering: pixelated;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Legend
+   --------------------------------------------------------------------------- */
+
+.s2-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 8px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  opacity: 0.4;
+  transition: opacity 220ms ease-out;
+}
+.s2-legend.s2-visible { opacity: 1; }
+
+.s2-legend-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-secondary);
+}
+
+.s2-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--ink-secondary);
+}
+.s2-swatch.class-sky    { background: var(--class-sky); }
+.s2-swatch.class-grass  { background: var(--class-grass); }
+.s2-swatch.class-sun    { background: var(--class-sun); }
+.s2-swatch.class-tree   { background: var(--class-tree); }
+.s2-swatch.class-person { background: var(--class-person); }
+
+.s2-legend-name {
+  color: var(--ink);
+  font-weight: 500;
+}
+.s2-legend-int {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   Data-generator inset
+   --------------------------------------------------------------------------- */
+
+.s2-gen-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 12px 14px 14px;
+  opacity: 0.45;
+  transition: opacity 220ms ease-out;
+}
+.s2-gen-wrap.s2-visible { opacity: 1; }
+
+.s2-gen-inner {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.s2-gen-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.s2-gen-imgs {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.s2-gen-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.s2-gen-host canvas {
+  image-rendering: pixelated;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.s2-gen-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.s2-gen-btn {
+  background: var(--cnn-pos);
+  color: white;
+  border: 1px solid var(--cnn-pos);
+  border-radius: 3px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.s2-gen-btn:hover { filter: brightness(1.06); }
+.s2-gen-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: none;
+}
+
+.s2-gen-idx {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.s2-gen-note {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+  border-left: 2px solid var(--rule);
+  padding: 4px 10px;
+  margin: 10px 0 0;
+}
+.s2-gen-note strong {
+  font-style: normal;
+  color: var(--ink);
+}
+.s2-gen-note code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 1px 4px;
+  color: var(--ink);
+  font-style: normal;
+}
+
+/* ---------------------------------------------------------------------------
+   Histogram
+   --------------------------------------------------------------------------- */
+
+.s2-hist-wrap {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 12px 14px 14px;
+  opacity: 0.45;
+  transition: opacity 220ms ease-out;
+}
+.s2-hist-wrap.s2-visible { opacity: 1; }
+
+.s2-hist-host {
+  display: block;
+  overflow-x: auto;
+}
+
+.s2-hist-note {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+  border-left: 2px solid var(--rule);
+  padding: 4px 10px;
+  margin: 8px 0 0;
+}
+.s2-hist-note strong {
+  font-style: normal;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Caption
+   --------------------------------------------------------------------------- */
+
+.s2-caption { margin-top: 4px; }
+
+/* ---------------------------------------------------------------------------
+   Narrow viewport fallback
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .s2-gen-inner { flex-direction: column; }
+  .s2-pair-imgs { flex-direction: column; align-items: center; }
+}

@@ -1,0 +1,310 @@
+/* Scene 8 -- "Walking up the right side of the U."
+
+   No skip arcs! The decoder is laid out as a horizontal walk:
+     bottleneck (16x16x64) -> dec2 (32x32x32) -> dec1 (64x64x16)
+   then the prediction overlay below. */
+
+.s8-root .s8-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s8-hero h1 { font-size: 28px; }
+.s8-hero .lede em { font-style: italic; color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Sample selector strip
+   --------------------------------------------------------------------------- */
+
+.s8-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.s8-selector-label {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  flex: 0 0 auto;
+}
+.s8-selector-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+.s8-thumb {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 3px;
+  cursor: pointer;
+  transition: border-color 120ms ease-out, transform 120ms ease-out;
+}
+.s8-thumb:hover { border-color: var(--ink-secondary); }
+.s8-thumb.active {
+  border-color: var(--cnn-pos);
+  box-shadow: 0 0 0 2px var(--cnn-pos);
+  transform: translateY(-1px);
+}
+.s8-thumb-host { display: block; }
+.s8-thumb canvas { display: block; image-rendering: pixelated; }
+
+/* ---------------------------------------------------------------------------
+   Architecture diagram (no skips)
+   --------------------------------------------------------------------------- */
+
+.s8-arch {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px 36px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.s8-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.s8-col-bot { grid-column: 1; }
+.s8-col-dec2 { grid-column: 3; }
+.s8-col-dec1 { grid-column: 5; }
+
+/* Cards (one per U-Net level). */
+.s8-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  opacity: 0.45;
+  transition: opacity 220ms ease-out, border-color 220ms ease-out;
+}
+.s8-card.s8-half {
+  opacity: 0.75;
+  border-style: dashed;
+}
+.s8-card.s8-visible {
+  opacity: 1;
+  border-color: var(--ink-secondary);
+  border-style: solid;
+}
+
+.s8-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s8-card-name {
+  font-weight: 600;
+  color: var(--ink);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+}
+.s8-card-sub {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+}
+.s8-card-body {
+  position: relative;
+  background: var(--bg);
+}
+.s8-card-body canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* ---------------------------------------------------------------------------
+   Flow arrows (SVG overlay)
+   --------------------------------------------------------------------------- */
+
+.s8-arrows {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+.s8-arrows svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  overflow: visible;
+  isolation: isolate;
+}
+
+/* Upsample arrows (the transposed convs): amber, dashed, prominent. */
+.s8-up {
+  stroke: var(--cnn-accent);
+  stroke-width: 2.4;
+  stroke-dasharray: 8 4;
+  fill: none;
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+:root[data-theme="light"] .s8-up { stroke: #8d5f1f; }
+
+/* Conv-block arrows: thinner, ink-coloured. */
+.s8-conv {
+  stroke: var(--ink-secondary);
+  stroke-width: 1.6;
+  fill: none;
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+.s8-up-label,
+.s8-conv-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  fill: var(--ink-secondary);
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+.s8-up-label { fill: var(--cnn-accent); }
+:root[data-theme="light"] .s8-up-label { fill: #8d5f1f; }
+
+#s8-arrow path { fill: var(--cnn-accent); }
+:root[data-theme="light"] #s8-arrow path { fill: #8d5f1f; }
+
+.s8-arch.s8-up1-lit .s8-flow-u1 .s8-up,
+.s8-arch.s8-up1-lit .s8-flow-u1 .s8-up-label { opacity: 0.95; }
+.s8-arch.s8-c1-lit .s8-flow-c1 .s8-conv,
+.s8-arch.s8-c1-lit .s8-flow-c1 .s8-conv-label { opacity: 0.85; }
+.s8-arch.s8-up2-lit .s8-flow-u2 .s8-up,
+.s8-arch.s8-up2-lit .s8-flow-u2 .s8-up-label { opacity: 0.95; }
+.s8-arch.s8-c2-lit .s8-flow-c2 .s8-conv,
+.s8-arch.s8-c2-lit .s8-flow-c2 .s8-conv-label { opacity: 0.85; }
+.s8-arch.s8-out-lit .s8-flow-out .s8-conv,
+.s8-arch.s8-out-lit .s8-flow-out .s8-conv-label { opacity: 0.85; }
+
+/* ---------------------------------------------------------------------------
+   Prediction overlay panel
+   --------------------------------------------------------------------------- */
+
+.s8-overlay {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  margin-top: 8px;
+}
+.s8-ov-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.s8-ov-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s8-ov-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--card-bg);
+}
+.s8-ov-host.s8-visible { border-color: var(--ink-secondary); }
+.s8-ov-host canvas { display: block; image-rendering: pixelated; }
+
+/* ---------------------------------------------------------------------------
+   Class legend
+   --------------------------------------------------------------------------- */
+
+.s8-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.s8-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.s8-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: currentColor;
+  border: 1px solid color-mix(in srgb, currentColor 80%, transparent);
+}
+.s8-legend-name {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-transform: lowercase;
+}
+
+/* ---------------------------------------------------------------------------
+   Caption + honesty footnote
+   --------------------------------------------------------------------------- */
+
+.s8-caption {
+  margin: 4px 4px 0;
+  text-align: center;
+  font-size: 14.5px;
+  min-height: 1.4em;
+}
+.s8-honesty {
+  margin: 6px 4px 0;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  font-style: italic;
+  text-align: center;
+}
+.s8-honesty em { color: var(--ink); font-style: italic; }
+.s8-honesty-tag {
+  font-style: normal;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-secondary);
+  margin-right: 4px;
+}
+.s8-controls { margin-top: 6px; }
+
+/* ---------------------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .s8-overlay { grid-template-columns: 1fr; }
+  .s8-arch {
+    grid-template-columns: 1fr;
+  }
+  .s8-col-bot,
+  .s8-col-dec2,
+  .s8-col-dec1 {
+    grid-column: 1;
+  }
+  .s8-arrows { display: none; }
+}

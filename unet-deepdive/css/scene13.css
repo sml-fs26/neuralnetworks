@@ -1,0 +1,190 @@
+/* Scene 13 — "Watching the segmentation come into focus."
+   Layout:
+     hero
+     body: prediction snapshot (left) + 3 charts (right)
+     timeline slider + play button
+     caption + step controls */
+
+.s13-root .s13-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s13-hero h1 { font-size: 28px; }
+.s13-hero .lede em { font-style: italic; color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Body: two-column layout
+   --------------------------------------------------------------------------- */
+
+.s13-body {
+  display: grid;
+  grid-template-columns: minmax(280px, auto) minmax(420px, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.s13-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.s13-right {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s13-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.s13-panel-label {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s13-panel-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--card-bg);
+}
+.s13-panel-host canvas { display: block; image-rendering: pixelated; }
+
+.s13-refrow {
+  display: flex;
+  gap: 10px;
+}
+
+/* Badges (training step, accuracy, loss) */
+.s13-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.s13-badge {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 90px;
+}
+.s13-badge-label {
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s13-badge-value {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Charts
+   --------------------------------------------------------------------------- */
+
+.s13-chart {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 12px 6px;
+}
+.s13-chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+.s13-chart-title {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s13-chart-note {
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--ink-secondary);
+}
+.s13-chart-svg { display: block; }
+
+/* ---------------------------------------------------------------------------
+   Timeline slider + play button
+   --------------------------------------------------------------------------- */
+
+.s13-timeline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.s13-timeline-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+  flex: 0 0 auto;
+}
+.s13-slider {
+  flex: 1 1 auto;
+  accent-color: var(--cnn-pos);
+  height: 4px;
+}
+.s13-slider-out {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  min-width: 90px;
+  text-align: right;
+}
+.s13-play {
+  background: var(--cnn-pos);
+  color: white;
+  border: 1px solid var(--cnn-pos);
+  border-radius: 3px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.s13-play:hover { filter: brightness(1.06); }
+.s13-play:disabled { opacity: 0.4; cursor: not-allowed; }
+.s13-slider:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.s13-caption {
+  margin: 4px 4px 0;
+  text-align: center;
+  font-size: 14.5px;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .s13-body {
+    grid-template-columns: 1fr;
+  }
+  .s13-left { align-items: flex-start; }
+}

@@ -1,0 +1,351 @@
+/* Scene 1 — From one label to a label per pixel.
+
+   Layout:
+     hero
+     two side-by-side panels (classifier | segmenter)
+     class legend
+     two side-by-side KaTeX formula blocks (revealed at step 4)
+     caption + honesty footnote + step controls */
+
+.s1-root .s1-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s1-hero h1 { font-size: 28px; }
+.s1-hero .lede em {
+  font-style: italic;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Two panels (classifier | segmenter)
+   --------------------------------------------------------------------------- */
+
+.s1-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: stretch;
+  margin-top: 6px;
+}
+
+.s1-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100%;
+}
+
+.s1-panel-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 18px;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+
+.s1-panel-sub {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  margin-top: -6px;
+}
+
+.s1-panel-foot {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 13.5px;
+  color: var(--ink-secondary);
+  margin: 4px 0 0;
+}
+.s1-panel-foot code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Flow row inside each panel: input → output
+   --------------------------------------------------------------------------- */
+
+.s1-flow-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.s1-flow-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.s1-flow-cell .col-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.s1-arrow {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 28px;
+  color: var(--ink-secondary);
+  line-height: 1;
+  flex: 0 0 auto;
+  user-select: none;
+}
+
+.s1-input-host canvas,
+.s1-output-host canvas {
+  image-rendering: pixelated;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+/* ---------------------------------------------------------------------------
+   Bar chart (per-class probabilities) — used both for classifier output
+   and for the per-pixel hover inspector on the right.
+   --------------------------------------------------------------------------- */
+
+.s1-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 220px;
+  max-width: 100%;
+}
+
+.s1-bar-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.s1-bar-name {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-secondary);
+  text-align: right;
+}
+
+.s1-bar-track {
+  height: 12px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.s1-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--ink-secondary);
+  transition: width 220ms ease-out;
+}
+
+/* When the row carries a class-* class, the swatch/legend coloring is on
+   the swatch elsewhere; for bars we override the fill background. */
+.s1-bar-fill.class-sky    { background: var(--class-sky); }
+.s1-bar-fill.class-grass  { background: var(--class-grass); }
+.s1-bar-fill.class-sun    { background: var(--class-sun); }
+.s1-bar-fill.class-tree   { background: var(--class-tree); }
+.s1-bar-fill.class-person { background: var(--class-person); }
+
+.s1-bar-fill-blank {
+  background: repeating-linear-gradient(
+    45deg,
+    transparent 0 4px,
+    var(--rule) 4px 6px
+  );
+  width: 100%;
+  opacity: 0.5;
+}
+
+.s1-bar-val {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ---------------------------------------------------------------------------
+   Verdict line under the classifier bars
+   --------------------------------------------------------------------------- */
+
+.s1-verdict {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  text-align: center;
+  margin-top: 4px;
+  opacity: 0.55;
+  transition: opacity 200ms ease-out;
+}
+.s1-verdict.s1-visible { opacity: 1; }
+.s1-verdict strong { font-weight: 600; }
+
+/* ---------------------------------------------------------------------------
+   Hover inspector (right panel)
+   --------------------------------------------------------------------------- */
+
+.s1-hover-wrap {
+  margin-top: 6px;
+  border-top: 1px dashed var(--rule);
+  padding-top: 10px;
+  opacity: 0.45;
+  transition: opacity 200ms ease-out;
+}
+.s1-hover-wrap.s1-hover-enabled { opacity: 1; }
+
+.s1-hover-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.s1-hover-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.s1-hover-pos {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.s1-hover-bars { width: 240px; }
+
+.s1-hover-argmax {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+.s1-hover-argmax strong { font-weight: 600; }
+
+.s1-output-host.s1-hover-on canvas { cursor: crosshair; }
+
+/* ---------------------------------------------------------------------------
+   Class legend
+   --------------------------------------------------------------------------- */
+
+.s1-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 6px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.s1-legend-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-secondary);
+}
+
+.s1-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--ink-secondary);
+}
+.s1-swatch.class-sky    { background: var(--class-sky); }
+.s1-swatch.class-grass  { background: var(--class-grass); }
+.s1-swatch.class-sun    { background: var(--class-sun); }
+.s1-swatch.class-tree   { background: var(--class-tree); }
+.s1-swatch.class-person { background: var(--class-person); }
+
+.s1-legend-name { color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Side-by-side KaTeX formula blocks (step 4)
+   --------------------------------------------------------------------------- */
+
+.s1-formulas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+  pointer-events: none;
+}
+.s1-formulas.s1-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.s1-formula {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+.s1-formula-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s1-formula-math .katex-display { margin: 0; }
+.s1-formula-math .katex { color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Caption / honest footnote
+   --------------------------------------------------------------------------- */
+
+.s1-caption { margin-top: 4px; }
+
+.s1-honest {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 12.5px;
+  color: var(--ink-secondary);
+  border-left: 2px solid var(--rule);
+  padding: 4px 10px;
+  margin: 4px 0 0;
+  font-style: italic;
+}
+.s1-honest strong {
+  font-style: normal;
+  color: var(--ink);
+}
+.s1-honest em { color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Narrow viewport fallback
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .s1-panels { grid-template-columns: 1fr; }
+  .s1-formulas { grid-template-columns: 1fr; }
+  .s1-flow-row { flex-wrap: wrap; }
+  .s1-bars { width: 100%; }
+}

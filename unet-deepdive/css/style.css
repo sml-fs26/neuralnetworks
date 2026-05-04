@@ -1,0 +1,357 @@
+/* Editorial palette + scene-engine shell. Tokens consistent with the
+   sibling gradient-descent-viz so the lecture's visual identity carries. */
+
+:root,
+:root[data-theme="light"] {
+  --bg: #f9f7f1;
+  --ink: #1a1a1a;
+  --ink-secondary: #6b6b6b;
+  --rule: #d8d4ca;
+  --card-bg: #ffffff;
+
+  /* CNN-specific tokens */
+  --cnn-pos: #2f6cb1;          /* blue: positive weight, fires, match */
+  --cnn-neg: #b8323a;          /* red: negative weight */
+  --cnn-neutral: #f0ece2;      /* heatmap mid-point */
+  --cnn-accent: #c08a3e;       /* amber: highlight */
+  --cnn-purple: #7a5c8c;       /* purple: tertiary, used sparingly */
+  --cnn-green: #4a8b6b;        /* green: tertiary, used sparingly */
+
+  /* Categorical classes (segmentation) */
+  --class-sky: #6ea3dc;
+  --class-grass: #4a8b6b;
+  --class-sun: #c08a3e;
+  --class-tree: #7a5c8c;
+  --class-person: #b8323a;
+}
+
+:root[data-theme="dark"] {
+  --bg: #181612;
+  --ink: #ece7d9;
+  --ink-secondary: #8a8579;
+  --rule: #383530;
+  --card-bg: #211e19;
+
+  --cnn-pos: #6ea3dc;
+  --cnn-neg: #d77078;
+  --cnn-neutral: #2a2722;
+  --cnn-accent: #d6a766;
+  --cnn-purple: #b394cb;
+  --cnn-green: #6fae8a;
+
+  --class-sky: #6ea3dc;
+  --class-grass: #6fae8a;
+  --class-sun: #d6a766;
+  --class-tree: #b394cb;
+  --class-person: #d77078;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------------------
+   Topbar
+   --------------------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.topbar .brand { font-weight: 600; }
+.topbar .scene-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-secondary);
+  flex: 1 1 auto;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.topbar .right-cluster { display: flex; gap: 8px; align-items: center; }
+
+.theme-toggle, .pager-btn {
+  background: transparent;
+  color: var(--ink-secondary);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.theme-toggle:hover, .pager-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-secondary);
+}
+.pager-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+   Stage / scene engine
+   --------------------------------------------------------------------------- */
+
+.stage {
+  position: relative;
+  max-width: 1200px;
+  margin: 16px auto 32px;
+  padding: 0 24px;
+  min-height: calc(100vh - 130px);
+}
+
+.scene {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  transition: opacity 180ms ease-out;
+}
+.scene.active {
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
+  left: 0;
+  right: 0;
+}
+
+/* Dot pager in the topbar */
+.dot-pager {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.dot-pager .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rule);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.dot-pager .dot.active { background: var(--ink); }
+.dot-pager .dot:hover { background: var(--ink-secondary); }
+
+/* ---------------------------------------------------------------------------
+   Hero block
+   --------------------------------------------------------------------------- */
+
+.hero h1 {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-weight: 500;
+  font-size: 28px;
+  margin: 0 0 6px;
+  letter-spacing: -0.005em;
+}
+
+.hero .subtitle {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-secondary);
+  margin: 0 0 18px;
+}
+
+.hero .lede {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 16.5px;
+  line-height: 1.55;
+  margin: 0 0 14px;
+  max-width: 60ch;
+}
+
+/* ---------------------------------------------------------------------------
+   Cards
+   --------------------------------------------------------------------------- */
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+/* ---------------------------------------------------------------------------
+   Controls
+   --------------------------------------------------------------------------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  padding: 8px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin-top: 10px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+
+.control-group label { white-space: nowrap; }
+
+.control-group input[type="range"] {
+  accent-color: var(--cnn-pos);
+  height: 4px;
+  width: 130px;
+}
+
+.control-group output, .control-group .control-value {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  min-width: 36px;
+  text-align: right;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.control-group select, .control-group button {
+  background: var(--card-bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.control-group button:hover, .control-group select:hover {
+  border-color: var(--ink-secondary);
+}
+.control-group button.primary {
+  background: var(--cnn-pos);
+  color: white;
+  border-color: var(--cnn-pos);
+}
+.control-group button.primary:hover { filter: brightness(1.06); }
+.control-group button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ---------------------------------------------------------------------------
+   Captions / footnotes / formula blocks
+   --------------------------------------------------------------------------- */
+
+.caption {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-secondary);
+  margin: 8px 4px 0;
+  min-height: 1.55em;
+}
+
+.footnote {
+  font-size: 11px;
+  color: var(--ink-secondary);
+  border-top: 1px solid var(--rule);
+  padding-top: 8px;
+  margin-top: 14px;
+  text-align: right;
+  font-style: italic;
+}
+.footnote kbd {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0 4px;
+  background: var(--card-bg);
+  color: var(--ink);
+  font-style: normal;
+}
+
+.formula-block {
+  margin: 10px 0;
+  text-align: center;
+}
+.formula-block .katex { color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Cluster classes (segmentation overlay)
+   --------------------------------------------------------------------------- */
+
+.class-sky    { fill: var(--class-sky);    stroke: var(--class-sky); color: var(--class-sky); }
+.class-grass  { fill: var(--class-grass);  stroke: var(--class-grass); color: var(--class-grass); }
+.class-sun    { fill: var(--class-sun);    stroke: var(--class-sun); color: var(--class-sun); }
+.class-tree   { fill: var(--class-tree);   stroke: var(--class-tree); color: var(--class-tree); }
+.class-person { fill: var(--class-person); stroke: var(--class-person); color: var(--class-person); }
+
+/* ---------------------------------------------------------------------------
+   Generic two-column scene layout (input | output)
+   --------------------------------------------------------------------------- */
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.col-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.col-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+/* Canvas container — locks dimensions to prevent flex/grid auto-stretch
+   silently squashing canvases under headless rendering. */
+.canvas-host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.canvas-host canvas { display: block; flex: 0 0 auto; }

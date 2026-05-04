@@ -1,0 +1,310 @@
+/* Scene 0 — A U-Net, end to end.
+
+   Layout:
+     hero                                          (full width)
+     [ U diagram (architecture) | input -> output strip ]   (.s0-main)
+     class legend
+     caption + controls + cue */
+
+.s0-root .s0-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s0-hero h1 { font-size: 30px; }
+.s0-hero .lede em {
+  font-style: italic;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Main split: U diagram on the left, input -> output strip on the right
+   --------------------------------------------------------------------------- */
+
+.s0-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* ---------------------------------------------------------------------------
+   U-shape architecture diagram
+   --------------------------------------------------------------------------- */
+
+.s0-arch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "enc1 .    dec1"
+    "enc2 .    dec2"
+    ".    bot  .";
+  gap: 18px 22px;
+  padding: 56px 10px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.s0-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.s0-col-enc {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-items: flex-start;
+  padding-left: 4px;
+}
+.s0-col-bot {
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: center;
+  align-self: end;
+}
+.s0-col-dec {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-items: flex-end;
+  padding-right: 4px;
+}
+
+/* Cards (one per U-Net level) */
+.s0-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  opacity: 0.5;
+  transition: opacity 220ms ease-out, border-color 220ms ease-out;
+}
+.s0-card.s0-visible {
+  opacity: 1;
+  border-color: var(--ink-secondary);
+}
+
+.s0-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s0-card-name {
+  font-weight: 600;
+  color: var(--ink);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+}
+.s0-card-sub {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 10px;
+}
+
+.s0-card-body { position: relative; }
+.s0-card-body canvas { display: block; }
+
+/* ---------------------------------------------------------------------------
+   Skip + flow arrows (SVG overlay)
+   --------------------------------------------------------------------------- */
+
+.s0-arrows {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+.s0-arrows svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.s0-skip-path {
+  stroke: var(--cnn-accent);
+  stroke-width: 3;
+  stroke-dasharray: 10 5;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0;
+}
+:root[data-theme="light"] .s0-skip-path { stroke: #8d5f1f; }
+#s0-arrow path { fill: var(--cnn-accent); }
+:root[data-theme="light"] #s0-arrow path { fill: #8d5f1f; }
+
+.s0-arch.s0-skips-lit .s0-skip-path { opacity: 0.95; }
+
+.s0-down, .s0-up {
+  stroke: var(--ink-secondary);
+  stroke-width: 1.4;
+  fill: none;
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+.s0-arch.s0-down1-lit .s0-flow-d1 .s0-down,
+.s0-arch.s0-down2-lit .s0-flow-d2 .s0-down { opacity: 0.85; }
+.s0-arch.s0-up1-lit   .s0-flow-u1 .s0-up,
+.s0-arch.s0-up2-lit   .s0-flow-u2 .s0-up   { opacity: 0.85; }
+
+/* ---------------------------------------------------------------------------
+   Input -> output strip
+   --------------------------------------------------------------------------- */
+
+.s0-strip {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.s0-strip-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.s0-strip-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+  text-align: center;
+}
+
+.s0-strip-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0;
+  background: var(--card-bg);
+}
+.s0-strip-host.s0-visible { border-color: var(--ink-secondary); }
+.s0-strip-host canvas { display: block; image-rendering: pixelated; }
+
+.s0-strip-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-secondary);
+}
+.s0-strip-arrow svg {
+  width: 60px;
+  height: 24px;
+  fill: var(--ink-secondary);
+  stroke: var(--ink-secondary);
+  stroke-width: 1.6;
+}
+.s0-strip-arrow-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   Class legend
+   --------------------------------------------------------------------------- */
+
+.s0-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.s0-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.s0-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: currentColor;
+  border: 1px solid color-mix(in srgb, currentColor 80%, transparent);
+}
+.s0-legend-name {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-transform: lowercase;
+}
+
+/* ---------------------------------------------------------------------------
+   Caption / controls / cue
+   --------------------------------------------------------------------------- */
+
+.s0-caption {
+  margin: 4px 4px 0;
+  text-align: center;
+  font-size: 14.5px;
+}
+
+.s0-controls { margin-top: 6px; }
+
+.s0-play {
+  /* A subtle pulse so the play button reads as the call-to-action. */
+  animation: s0-pulse 2.4s ease-in-out infinite;
+}
+.s0-play:hover { animation: none; }
+
+@keyframes s0-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--cnn-pos) 70%, transparent); }
+  50%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--cnn-pos) 0%, transparent); }
+}
+
+.s0-cue {
+  text-align: right;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  font-style: italic;
+  margin: 0;
+}
+.s0-cue kbd {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0 4px;
+  background: var(--card-bg);
+  color: var(--ink);
+  font-style: normal;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive: stack the U + strip vertically on narrow viewports.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 1080px) {
+  .s0-main { grid-template-columns: 1fr; }
+}

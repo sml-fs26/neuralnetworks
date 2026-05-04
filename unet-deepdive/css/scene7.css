@@ -1,0 +1,338 @@
+/* Scene 7 — Transposed convolution: stamp instead of slide.
+   Streamlined. No zero-insert view, no matrix inset.
+   Per-cell stamp animation is the centerpiece. */
+
+.s7-root { padding: 0 24px 32px; }
+.s7-wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* ---- Hero ----------------------------------------------------------- */
+.s7-hero h1 { margin-bottom: 4px; }
+.s7-hero .subtitle {
+  max-width: 880px;
+  font-style: italic;
+  color: var(--ink-secondary);
+  margin: 0;
+}
+
+/* ---- Shape derivation block ---------------------------------------- */
+.s7-shape {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent, #d97a1f);
+  border-radius: 4px;
+  padding: 18px 20px;
+}
+.s7-shape-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent, #d97a1f);
+  font-family: "SF Mono", Menlo, monospace;
+  margin-bottom: 12px;
+}
+.s7-shape-body {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.s7-shape-diag { flex: 0 0 auto; }
+.s7-shape-diag svg { display: block; }
+.s7-shape-prose {
+  flex: 1 1 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.s7-shape-text {
+  margin: 0;
+  line-height: 1.55;
+  font-size: 14px;
+  color: var(--ink);
+}
+.s7-shape-text code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 0.92em;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.s7-shape-formula {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 10px 14px;
+  text-align: center;
+}
+
+/* ---- Cheat-sheet --------------------------------------------------- */
+.s7-cheat {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  flex-wrap: wrap;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+.s7-cheat-item { display: flex; align-items: baseline; gap: 6px; }
+.s7-cheat-k { color: var(--ink-secondary); }
+.s7-cheat-v { color: var(--ink); font-weight: 600; }
+.s7-cheat-v-em { color: var(--accent, #d97a1f); }
+.s7-cheat-formula {
+  margin-left: auto;
+  color: var(--ink-secondary);
+  font-style: italic;
+}
+
+/* ---- Main animation panel ----------------------------------------- */
+.s7-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 18px 20px;
+}
+.s7-panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+.s7-panel-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s7-panel-progress {
+  font-size: 12px;
+  color: var(--accent, #d97a1f);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s7-panel-grid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.s7-out-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+.s7-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.s7-col-cap {
+  font-size: 12px;
+  font-family: "SF Mono", Menlo, monospace;
+  color: var(--ink);
+  font-weight: 600;
+}
+.s7-col-sub {
+  font-size: 11px;
+  color: var(--ink-secondary);
+  font-style: italic;
+  max-width: 200px;
+  text-align: center;
+}
+.s7-canvas-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s7-canvas-host canvas { display: block; }
+.s7-out-host { background: var(--bg); }
+.s7-op {
+  font-size: 28px;
+  color: var(--ink-secondary);
+  padding: 0 4px;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+}
+.s7-op-arrow { font-size: 22px; color: var(--accent, #d97a1f); }
+
+/* ---- Narration ---------------------------------------------------- */
+.s7-narration {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s7-narration-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s7-narration-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.s7-n-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.s7-n-k {
+  display: inline-block;
+  width: 60px;
+  flex-shrink: 0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s7-n-v {
+  flex: 1;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+/* ---- Hover chip --------------------------------------------------- */
+.s7-hover-chip {
+  align-self: center;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px;
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  max-width: 540px;
+}
+.s7-hover-head {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent, #d97a1f);
+  margin-bottom: 4px;
+}
+.s7-hover-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+}
+.s7-hover-row { line-height: 1.4; }
+
+/* ---- Step controls ----------------------------------------------- */
+.s7-controls {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  flex-wrap: wrap;
+}
+.s7-control-group { display: flex; align-items: center; gap: 10px; }
+.s7-control-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+#s7-step { width: 220px; }
+.s7-control-value {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink);
+  min-width: 38px;
+  text-align: right;
+}
+.s7-btn {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 12px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.s7-btn:hover:not(:disabled) { background: var(--card-bg); }
+.s7-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.s7-btn-primary {
+  background: var(--accent, #d97a1f);
+  color: var(--bg);
+  border-color: var(--accent, #d97a1f);
+  font-weight: 600;
+}
+.s7-btn-primary:hover:not(:disabled) {
+  background: var(--accent, #d97a1f);
+  filter: brightness(1.08);
+}
+
+/* ---- Knobs ------------------------------------------------------- */
+.s7-knobs {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.s7-knob { display: flex; align-items: center; gap: 8px; }
+.s7-knob-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s7-knob-btn {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  padding: 5px 10px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.s7-knob-btn.s7-active {
+  background: var(--accent, #d97a1f);
+  color: var(--bg);
+  border-color: var(--accent, #d97a1f);
+  font-weight: 600;
+}
+
+/* ---- Caption ----------------------------------------------------- */
+.s7-caption {
+  font-style: italic;
+  color: var(--ink-secondary);
+  text-align: center;
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* ---- Narrow viewport --------------------------------------------- */
+@media (max-width: 1100px) {
+  .s7-shape-body { flex-direction: column; align-items: stretch; }
+  .s7-panel-grid { gap: 8px; }
+  .s7-op { font-size: 22px; padding: 0 2px; }
+  .s7-cheat { gap: 12px; }
+}

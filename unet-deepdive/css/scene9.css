@@ -1,0 +1,461 @@
+/* Scene 9 — What the bottleneck threw away.
+
+   Layout:
+     hero
+     sample selector strip
+     four-panel display: input | GT | no-skip | with-skip
+     class legend
+     4x zoom viewer
+     channel-count diagram (revealed at step 4)
+     receptive-field help line (revealed at step 5)
+     two accuracy badges + honesty footnote
+     caption + step controls */
+
+.s9-root .s9-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s9-hero h1 { font-size: 28px; }
+.s9-hero .lede em { font-style: italic; color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Sample selector
+   --------------------------------------------------------------------------- */
+
+.s9-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+.s9-selector-label {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s9-selector-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.s9-thumb {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 3px;
+  cursor: pointer;
+  transition: border-color 120ms ease-out, transform 120ms ease-out;
+}
+.s9-thumb:hover { border-color: var(--ink-secondary); }
+.s9-thumb.active {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink) inset;
+}
+.s9-thumb-host canvas {
+  image-rendering: pixelated;
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+   Four-panel display (input | GT | no-skip | with-skip)
+   --------------------------------------------------------------------------- */
+
+.s9-panels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.s9-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  opacity: 1;
+  transition: opacity 220ms ease-out;
+}
+
+.s9-p-noskip:not(.s9-visible),
+.s9-p-skip:not(.s9-visible) {
+  opacity: 0.45;
+}
+
+.s9-panel-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.s9-panel-sub {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s9-panel-host {
+  position: relative;
+  margin-top: 2px;
+}
+.s9-panel-host canvas {
+  image-rendering: pixelated;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  display: block;
+}
+
+/* When any panel is in RF-hover mode, give it a crosshair cursor. */
+.s9-rf-on .s9-panel-host canvas { cursor: crosshair; }
+
+.s9-panel-badge {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+  min-height: 1em;
+}
+
+.s9-bdg-acc { color: var(--ink); }
+.s9-bdg-bnd {
+  color: var(--cnn-accent);
+  font-style: italic;
+  font-size: 10.5px;
+}
+
+/* Subtle highlight: when diff overlays are on, wrap each pred panel host with
+   a faint warning glow on the no-skip side and a calm one on with-skip. */
+.s9-panels.s9-diff-on .s9-p-noskip .s9-panel-host {
+  box-shadow: 0 0 0 1px var(--cnn-neg);
+}
+.s9-panels.s9-diff-on .s9-p-skip .s9-panel-host {
+  box-shadow: 0 0 0 1px var(--cnn-pos);
+}
+.s9-panels.s9-diff-on .s9-p-noskip .s9-panel-host { box-shadow: 0 0 0 1px var(--cnn-neg); }
+.s9-panels.s9-diff-on .s9-p-skip   .s9-panel-host { box-shadow: 0 0 0 1px var(--cnn-pos); }
+
+/* Zoom rectangle drawn over each big panel. */
+.s9-zoom-rect {
+  border: 1.5px dashed var(--cnn-accent);
+  background: rgba(192, 138, 62, 0.08);
+  border-radius: 1px;
+}
+:root[data-theme="dark"] .s9-zoom-rect {
+  background: rgba(214, 167, 102, 0.10);
+}
+
+/* RF overlay (drawn over the input panel). */
+.s9-rf-overlay {
+  position: absolute;
+  border: 1.5px solid var(--cnn-accent);
+  background: rgba(192, 138, 62, 0.16);
+  border-radius: 1px;
+  pointer-events: none;
+  transition: opacity 160ms ease-out;
+}
+:root[data-theme="dark"] .s9-rf-overlay {
+  background: rgba(214, 167, 102, 0.18);
+}
+
+/* ---------------------------------------------------------------------------
+   Class legend
+   --------------------------------------------------------------------------- */
+
+.s9-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 6px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.s9-legend-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-secondary);
+}
+.s9-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--ink-secondary);
+}
+.s9-swatch.class-sky    { background: var(--class-sky); }
+.s9-swatch.class-grass  { background: var(--class-grass); }
+.s9-swatch.class-sun    { background: var(--class-sun); }
+.s9-swatch.class-tree   { background: var(--class-tree); }
+.s9-swatch.class-person { background: var(--class-person); }
+.s9-legend-name { color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Zoom viewer
+   --------------------------------------------------------------------------- */
+
+.s9-zoom-box {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.s9-zoom-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.s9-zoom-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 15px;
+  color: var(--ink);
+}
+.s9-zoom-coords {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-secondary);
+}
+.s9-zoom-help {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.s9-zoom-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.s9-zoom-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+.s9-zoom-cell-label {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s9-zoom-host canvas {
+  image-rendering: pixelated;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  display: block;
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   Channel-count diagram (step 4)
+   --------------------------------------------------------------------------- */
+
+.s9-channels {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease-out;
+}
+.s9-channels.s9-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.s9-channels-title {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 16px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.s9-channels-sub {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-secondary);
+  margin-bottom: 10px;
+}
+
+.s9-channels-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.s9-ch-cell {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+.s9-ch-head {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  margin-bottom: 6px;
+}
+
+.s9-ch-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.s9-ch-line:last-of-type { border-bottom: none; }
+
+.s9-ch-tile {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 2px 6px;
+  background: var(--card-bg);
+  color: var(--ink);
+}
+.s9-ch-tile strong {
+  color: var(--cnn-accent);
+  font-weight: 700;
+}
+.s9-ch-up { border-color: var(--ink-secondary); }
+.s9-ch-conv { border-color: var(--cnn-pos); color: var(--cnn-pos); }
+.s9-ch-skip-tile { border-color: var(--cnn-accent); color: var(--cnn-accent); }
+
+.s9-ch-arrow, .s9-ch-plus {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 16px;
+  color: var(--ink-secondary);
+  user-select: none;
+}
+.s9-ch-plus { color: var(--cnn-accent); font-weight: 600; }
+
+.s9-ch-foot {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  margin-top: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+   Receptive-field help line (step 5)
+   --------------------------------------------------------------------------- */
+
+.s9-rf-help {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  border-left: 2px solid var(--cnn-accent);
+  padding: 4px 10px;
+  margin: 0;
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+}
+.s9-rf-help.s9-visible { opacity: 1; }
+.s9-rf-help strong { color: var(--ink); font-style: normal; font-weight: 600; }
+
+/* ---------------------------------------------------------------------------
+   Honesty / accuracy badges
+   --------------------------------------------------------------------------- */
+
+.s9-honesty {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s9-honesty-title {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s9-honesty-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+.s9-acc {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  min-width: 140px;
+  background: var(--bg);
+}
+.s9-acc-label {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s9-acc-value {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.s9-acc-ns { border-color: var(--cnn-neg); }
+.s9-acc-ws { border-color: var(--cnn-pos); }
+.s9-acc-ns .s9-acc-value { color: var(--cnn-neg); }
+.s9-acc-ws .s9-acc-value { color: var(--cnn-pos); }
+
+.s9-honesty-note {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  margin: 0;
+}
+.s9-honesty-note strong {
+  font-style: normal;
+  color: var(--ink);
+  font-weight: 600;
+}
+.s9-honesty-note em { color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Caption / controls
+   --------------------------------------------------------------------------- */
+
+.s9-caption { margin-top: 4px; }
+.s9-controls { margin-top: 4px; }
+
+/* ---------------------------------------------------------------------------
+   Narrow viewport fallback
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .s9-panels { grid-template-columns: 1fr 1fr; }
+  .s9-zoom-grid { grid-template-columns: 1fr 1fr; }
+  .s9-channels-row { grid-template-columns: 1fr; }
+}

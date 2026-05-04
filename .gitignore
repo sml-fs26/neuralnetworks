@@ -7,6 +7,7 @@ __pycache__/
 # The runtime data/datasets.js *is* committed; only the upstream npz/pt/log
 # artifacts that feed the build are excluded.
 cnn-deepdive/precompute/artifacts/
+unet-deepdive/precompute/artifacts/
 *.npz
 *.pt
 *.log

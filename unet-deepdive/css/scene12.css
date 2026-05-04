@@ -1,0 +1,298 @@
+/* Scene 12 — "The loss that knows about every pixel."
+   Layout:
+     hero
+     top row: input | ground truth | prediction (3 panels at 256px each)
+     middle row: heatmap (left) | inspector (right)
+     aggregate scalar loss bar
+     synthetic-softmax footnote
+     caption + controls */
+
+.s12-root .s12-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s12-hero h1 { font-size: 28px; }
+.s12-hero .lede em { font-style: italic; color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Top row: input · ground truth · prediction
+   --------------------------------------------------------------------------- */
+
+.s12-toprow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+}
+.s12-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.s12-panel-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s12-panel-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--card-bg);
+}
+.s12-panel-host canvas { display: block; image-rendering: pixelated; }
+
+/* The prediction panel becomes click-able from step 1+ */
+.s12-toprow .s12-panel:nth-child(3) .s12-panel-host { cursor: crosshair; }
+
+/* ---------------------------------------------------------------------------
+   Middle row: heatmap | inspector
+   --------------------------------------------------------------------------- */
+
+.s12-midrow {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.1fr);
+  gap: 18px;
+  margin-top: 6px;
+}
+
+/* Heatmap card */
+.s12-heat {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s12-heat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.s12-heat-title {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s12-heat-note {
+  font-size: 10.5px;
+  color: var(--ink-secondary);
+  font-style: italic;
+}
+.s12-heat-wrap {
+  position: relative;
+  align-self: center;
+}
+.s12-heat-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--bg);
+  cursor: crosshair;
+}
+.s12-heat-host canvas { display: block; image-rendering: pixelated; }
+.s12-heat-hint {
+  font-size: 10.5px;
+  color: var(--ink-secondary);
+  font-style: italic;
+  text-align: center;
+}
+
+.s12-reticle {
+  position: absolute;
+  border: 2px solid var(--cnn-accent);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* Inspector card */
+.s12-inspector {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0.55;
+  transition: opacity 220ms ease-out;
+}
+.s12-midrow.s12-step-1 .s12-inspector { opacity: 1; }
+
+.s12-ins-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.s12-ins-title {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s12-ins-coords {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11.5px;
+  color: var(--ink);
+}
+
+.s12-barwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.s12-barrow {
+  display: grid;
+  grid-template-columns: 14px 64px 1fr 48px 18px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.s12-bar-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: currentColor;
+  border: 1px solid color-mix(in srgb, currentColor 80%, transparent);
+}
+.s12-bar-name {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+.s12-bartrack {
+  position: relative;
+  height: 14px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.s12-barfill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: currentColor;
+  transition: width 180ms ease-out;
+}
+.s12-barlabel {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  text-align: right;
+}
+.s12-onehot {
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--bg);
+  position: relative;
+}
+.s12-onehot.on {
+  background: var(--cnn-pos);
+  border-color: var(--cnn-pos);
+}
+.s12-onehot.on::after {
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* Highlight rows: predicted + ground truth */
+.s12-barrow.s12-pred .s12-bar-name { font-weight: 700; }
+.s12-barrow.s12-gt .s12-onehot { box-shadow: 0 0 0 2px var(--cnn-accent); }
+
+.s12-formula {
+  border-top: 1px dashed var(--rule);
+  padding-top: 8px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+}
+.s12-formula-host .katex,
+.s12-formula-ce .katex { color: var(--ink); }
+.s12-formula-ce { color: var(--cnn-pos); font-size: 0.95em; }
+
+/* ---------------------------------------------------------------------------
+   Aggregate scalar loss
+   --------------------------------------------------------------------------- */
+
+.s12-aggregate {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s12-agg-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.s12-agg-title {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s12-agg-value {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  color: var(--cnn-pos);
+  transition: opacity 180ms ease-out;
+}
+.s12-agg-formula { text-align: center; }
+.s12-agg-formula .katex { color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Footnote (synthetic-softmax disclosure)
+   --------------------------------------------------------------------------- */
+
+.s12-footnote {
+  text-align: left;
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--ink-secondary);
+}
+.s12-footnote em { color: var(--ink); font-style: italic; }
+
+.s12-caption {
+  margin: 4px 4px 0;
+  text-align: center;
+  font-size: 14.5px;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .s12-toprow { grid-template-columns: 1fr; }
+  .s12-midrow { grid-template-columns: 1fr; }
+}

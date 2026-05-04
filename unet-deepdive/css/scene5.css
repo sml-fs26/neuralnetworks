@@ -1,0 +1,362 @@
+/* Scene 5 -- "16x16 of pure semantics."
+
+   Layout:
+     hero
+     sample selector strip
+     two-column main: input box (with RF SVG overlay) | 4x4 channel grid
+     profile panel (visible from step 2): three side-by-side bar charts
+     caption + controls */
+
+.s5-root .s5-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s5-hero h1 { font-size: 28px; }
+.s5-hero .lede em { font-style: italic; color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Sample selector strip
+   --------------------------------------------------------------------------- */
+
+.s5-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.s5-selector-label {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  flex: 0 0 auto;
+}
+.s5-selector-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+.s5-thumb {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 3px;
+  cursor: pointer;
+  transition: border-color 120ms ease-out, transform 120ms ease-out;
+}
+.s5-thumb:hover { border-color: var(--ink-secondary); }
+.s5-thumb.active {
+  border-color: var(--cnn-pos);
+  box-shadow: 0 0 0 2px var(--cnn-pos);
+  transform: translateY(-1px);
+}
+.s5-thumb-host { display: block; }
+.s5-thumb canvas { display: block; image-rendering: pixelated; }
+
+/* ---------------------------------------------------------------------------
+   Main two-column area
+   --------------------------------------------------------------------------- */
+
+.s5-main {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 16px 8px 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.s5-input-col,
+.s5-chan-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.s5-col-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+
+.s5-input-box {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--bg);
+}
+.s5-input-host {
+  position: absolute;
+  inset: 0;
+}
+.s5-input-host canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.s5-rf-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.s5-rf-overlay svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.s5-input-note {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+/* The 4x4 channel grid. Rows size to their content (header + tile body)
+   rather than being squeezed into 1fr each, so the bottom tiles don't
+   overflow the column. */
+.s5-chan-grid {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  grid-auto-rows: auto;
+  gap: 6px;
+  justify-content: start;
+}
+
+.s5-chan-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 2px;
+  gap: 2px;
+}
+.s5-chan-tile-head {
+  font-size: 10px;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s5-chan-tile-name {
+  letter-spacing: 0;
+}
+.s5-chan-tile-body {
+  position: relative;
+  background: var(--bg);
+}
+.s5-chan-tile-body canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.s5-chan-click {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.s5-chan-grid.s5-clickable .s5-chan-click {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+.s5-chan-click svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+   "What is a 64-dim profile?" primer (between main grid and profile panel)
+   --------------------------------------------------------------------------- */
+
+.s5-primer {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--cnn-accent);
+  border-radius: 4px;
+}
+.s5-primer-text {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.s5-primer-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s5-primer-body {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.s5-primer-body em { font-style: italic; }
+.s5-primer-body strong { font-weight: 600; }
+
+.s5-primer-visual {
+  flex: 0 1 340px;
+  min-width: 280px;
+  display: flex;
+  justify-content: center;
+}
+.s5-primer-svg {
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  display: block;
+}
+.s5-primer-cell {
+  fill: var(--bg);
+  stroke: var(--rule);
+  stroke-width: 0.6;
+}
+.s5-primer-cell-pick {
+  fill: var(--cnn-accent);
+  fill-opacity: 0.45;
+  stroke: var(--cnn-accent);
+  stroke-width: 1.1;
+}
+.s5-primer-arrow {
+  stroke: var(--ink-secondary);
+  stroke-width: 1.2;
+  fill: none;
+}
+.s5-primer-arrowhead {
+  fill: var(--ink-secondary);
+  stroke: none;
+}
+.s5-primer-baseline {
+  stroke: var(--rule);
+  stroke-width: 0.8;
+}
+.s5-primer-bar {
+  fill: var(--cnn-accent);
+  opacity: 0.85;
+}
+.s5-primer-label {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 8.5px;
+  fill: var(--ink-secondary);
+}
+.s5-primer-label-pick {
+  fill: var(--cnn-accent);
+}
+
+/* ---------------------------------------------------------------------------
+   Profile panel (step 2)
+   --------------------------------------------------------------------------- */
+
+.s5-profile-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  opacity: 0.55;
+  transition: opacity 220ms ease-out;
+}
+.s5-profile-panel.s5-visible {
+  opacity: 1;
+}
+.s5-profile-head {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.s5-profile-sub {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: -2px 0 4px;
+}
+.s5-profile-sub em { font-style: italic; color: var(--ink-secondary); }
+.s5-profile-sub strong { font-weight: 600; }
+.s5-profile-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.s5-profile-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 6px;
+  background: var(--bg);
+  border: 1px dashed var(--rule);
+  border-radius: 3px;
+  opacity: 0.5;
+  transition: opacity 180ms ease-out, border-style 180ms ease-out;
+}
+.s5-profile-slot.s5-profile-filled {
+  opacity: 1;
+  border-style: solid;
+}
+.s5-profile-slot-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  font-family: "SF Mono", Menlo, monospace;
+}
+.s5-profile-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: transparent;
+}
+.s5-profile-slot-label {
+  letter-spacing: 0;
+}
+.s5-profile-host canvas {
+  display: block;
+}
+
+.s5-clear-picks {
+  align-self: flex-end;
+}
+
+/* ---------------------------------------------------------------------------
+   Caption / controls
+   --------------------------------------------------------------------------- */
+
+.s5-caption {
+  margin: 4px 4px 0;
+  text-align: center;
+  font-size: 14.5px;
+  min-height: 1.4em;
+}
+.s5-controls { margin-top: 6px; }
+
+/* ---------------------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .s5-main { flex-direction: column; align-items: center; }
+}

@@ -1,0 +1,348 @@
+/* Scene 10 -- "What the filters look like."
+
+   Layout:
+     hero
+     section: 16 RGB tiles for enc1_conv1 (4 columns x 4 rows)
+     section: deeper-layer picker + filter slider + 4 stacked stencil rows
+     section: tconv (up1, up2) blocks side-by-side, 6 stencils each
+     section: 5 head bar charts (one per class)
+     caption + step controls
+
+   Sections fade in as their step is reached. */
+
+.s10-root .s10-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s10-hero h1 { font-size: 28px; }
+.s10-hero .lede em { font-style: italic; color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Section frame (shared)
+   --------------------------------------------------------------------------- */
+
+.s10-section {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0.42;
+  transition: opacity 240ms ease-out, border-color 240ms ease-out;
+}
+.s10-section.s10-revealed {
+  opacity: 1;
+  border-color: var(--ink-secondary);
+}
+
+.s10-sec-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--rule);
+}
+.s10-sec-name {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.s10-sec-sub {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+}
+
+.s10-sec-caption {
+  margin: 4px 2px 0;
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-secondary);
+  max-width: 880px;
+}
+.s10-sec-caption em {
+  color: var(--ink);
+  font-style: italic;
+}
+.s10-sec-caption code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  background: var(--bg);
+  padding: 0 4px;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Section 1: 16 RGB enc1_conv1 tiles
+   --------------------------------------------------------------------------- */
+
+.s10-rgb-grid {
+  display: grid;
+  grid-template-columns: repeat(8, auto);
+  gap: 10px 14px;
+  justify-content: start;
+  padding: 6px 2px 2px;
+}
+
+.s10-rgb-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.s10-rgb-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--bg);
+  display: block;
+}
+.s10-rgb-host canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.s10-rgb-label {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  color: var(--ink-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   Section 2: deeper-layer picker + stencil rows
+   --------------------------------------------------------------------------- */
+
+.s10-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+}
+.s10-picker-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+}
+.s10-picker-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.s10-picker-btn {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: border-color 120ms ease-out, color 120ms ease-out;
+}
+.s10-picker-btn:hover { border-color: var(--ink-secondary); }
+.s10-picker-btn.active {
+  border-color: var(--cnn-pos);
+  color: var(--cnn-pos);
+  box-shadow: inset 0 0 0 1px var(--cnn-pos);
+}
+
+.s10-filter-slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0 6px;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+.s10-filter-slider label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.s10-filter-slider input[type="range"] {
+  flex: 0 1 240px;
+}
+.s10-filter-out {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink);
+  min-width: 2.5em;
+}
+.s10-filter-help {
+  font-style: italic;
+  font-size: 11px;
+  margin-left: auto;
+}
+
+.s10-deep-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 2px 2px;
+}
+.s10-deep-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.s10-deep-in-label {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  color: var(--ink-secondary);
+  min-width: 44px;
+}
+.s10-deep-tile {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--bg);
+  display: block;
+}
+.s10-deep-tile canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* ---------------------------------------------------------------------------
+   Section 3: transposed conv blocks
+   --------------------------------------------------------------------------- */
+
+.s10-tconv-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 4px 0 2px;
+}
+.s10-tconv-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 8px 10px 10px;
+}
+.s10-tconv-block-name {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink);
+}
+.s10-tconv-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s10-tconv-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.s10-tconv-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--bg);
+  display: block;
+}
+.s10-tconv-host canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.s10-tconv-label {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  color: var(--ink-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   Section 4: 1x1 head bar charts
+   --------------------------------------------------------------------------- */
+
+.s10-head-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 4px 0 2px;
+}
+.s10-head-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px 8px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+.s10-head-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.s10-head-swatch {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  display: inline-block;
+}
+.s10-head-name {
+  font-family: "SF Mono", Menlo, monospace;
+  font-weight: 600;
+  font-size: 11px;
+}
+.s10-head-host {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--bg);
+  display: block;
+}
+.s10-head-host canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.s10-head-axis {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 9.5px;
+  color: var(--ink-secondary);
+  text-align: center;
+  letter-spacing: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Caption / controls
+   --------------------------------------------------------------------------- */
+
+.s10-caption {
+  margin: 4px 4px 0;
+  text-align: center;
+  font-size: 14.5px;
+  min-height: 1.4em;
+}
+.s10-controls { margin-top: 6px; }
+
+/* ---------------------------------------------------------------------------
+   Responsive: collapse the tconv side-by-side and the rgb grid columns.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 1024px) {
+  .s10-rgb-grid {
+    grid-template-columns: repeat(4, auto);
+  }
+  .s10-tconv-wrap {
+    grid-template-columns: 1fr;
+  }
+}

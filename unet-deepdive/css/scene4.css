@@ -1,0 +1,193 @@
+/* Scene 4 -- "The encoder is the CNN you already know."
+
+   Layout:
+     hero
+     sample selector strip
+     pipeline row: input | -> | enc1 | -> | enc2 | -> | enc3
+     caption
+     controls */
+
+.s4-root .s4-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.s4-hero h1 { font-size: 28px; }
+.s4-hero .lede em { font-style: italic; color: var(--ink); }
+
+/* ---------------------------------------------------------------------------
+   Sample selector strip
+   --------------------------------------------------------------------------- */
+
+.s4-selector {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 4px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.s4-selector-label {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  flex: 0 0 auto;
+}
+
+.s4-selector-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+.s4-thumb {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 3px;
+  cursor: pointer;
+  transition: border-color 120ms ease-out, transform 120ms ease-out;
+}
+.s4-thumb:hover { border-color: var(--ink-secondary); }
+.s4-thumb.active {
+  border-color: var(--cnn-pos);
+  box-shadow: 0 0 0 2px var(--cnn-pos);
+  transform: translateY(-1px);
+}
+.s4-thumb-host { display: block; }
+.s4-thumb canvas { display: block; image-rendering: pixelated; }
+
+/* ---------------------------------------------------------------------------
+   Pipeline row
+   --------------------------------------------------------------------------- */
+
+.s4-pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 8px 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.s4-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.s4-stage-note {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.s4-input-host,
+.s4-card-body {
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--bg);
+}
+.s4-input-host canvas,
+.s4-card-body canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.s4-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  opacity: 0.45;
+  transition: opacity 220ms ease-out, border-color 220ms ease-out;
+}
+.s4-card.s4-visible {
+  opacity: 1;
+  border-color: var(--ink-secondary);
+}
+
+.s4-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-secondary);
+  padding-bottom: 2px;
+}
+.s4-card-name {
+  font-weight: 600;
+  color: var(--ink);
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+}
+.s4-card-sub {
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+}
+
+/* Arrows between stages -- amber chevron + a one-line op label below. */
+.s4-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 28px;
+  color: var(--cnn-accent);
+  line-height: 1;
+  padding: 0 4px;
+  flex: 0 0 auto;
+}
+.s4-arrow-label {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 11px;
+  color: var(--ink-secondary);
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Caption / controls
+   --------------------------------------------------------------------------- */
+
+.s4-caption {
+  margin: 4px 4px 0;
+  text-align: center;
+  font-size: 14.5px;
+  min-height: 1.4em;
+}
+.s4-controls { margin-top: 6px; }
+
+/* ---------------------------------------------------------------------------
+   Responsive: at narrower widths stack vertically and rotate the arrows.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .s4-pipeline {
+    flex-direction: column;
+  }
+  .s4-arrow {
+    transform: rotate(90deg);
+    padding: 8px 0;
+  }
+  .s4-arrow-label {
+    transform: rotate(-90deg);
+    margin-top: 0;
+  }
+}
