@@ -167,9 +167,33 @@ This is a **dev affordance, not a user feature** — the button stays the canoni
 
 If a scene has multiple gated buttons (e.g. "Train" then "Predict"), `&run` triggers only the **primary** one — the most visually prominent button, usually labelled "Run", "Go", or with a play icon. For multi-step playthrough use a separate `&runAll` flag that walks every gated button in order. Don't overload `&run`; it should mean "get me past the obvious gate."
 
-## Step engine (within-scene Next button)
+## Within-scene interaction: direct first, staged only when necessary
 
-Many scenes have an internal step counter:
+Every scene needs a way for the student to drive it. There are two patterns. **Pick the simplest one that fits the lesson.**
+
+### Direct interaction is the default
+
+A scene has one or more **always-live** controls — a slider, a button, a toggle, a digit selector. The student drags / clicks / picks; the scene re-renders from the resulting state. No cursor, no forced order, no internal Prev/Next within the scene (those move *between* scenes).
+
+This is the right pattern when the lesson is a *relationship* the student probes by varying parameters:
+
+- "One forward step" → β slider + a Step button. Single state.
+- "All the way to chaos" → t-slider over the full schedule. Single state.
+- "The shortcut" → t-slider + seed input; iterative cloud animates, fast-forward arrives instantly. Single state.
+
+### A within-scene step engine is an option, not a preference
+
+It is a tool in the toolbox: **considered and used if it makes sense, but never aimed for.** A scene gets a step engine only when the lesson IS the sequence — when the staging is the load-bearing pedagogical move and the alternative (single-state direct interaction) genuinely loses meaning. Concretely:
+
+- A derivation whose punchline depends on prior reveals.
+- An algorithm trace where step k must follow step k-1 (the canonical k-means scenes — assign → update → check — are this).
+- A dramatic reveal whose payoff requires buildup ("here's the formula" → "here's why we need ε" is a justified two-cursor case).
+
+If the question *"could this scene be one continuous control with a single state?"* has the answer *"yes, and the lesson doesn't suffer"* — make it single-state. Don't go looking for opportunities to add a step engine. Don't ask "what could the cursors be?" — ask "what does the student need to do, and is staging required for them to learn?"
+
+(Real story: the diffusion-deepdive shipped four scenes with internal step engines (1, 2, 3, 5) before user review pointed out that three of them were over-engineered. Each lesson was fully accessible via a slider and a button. The bias came from this skill's prior framing, where the step-engine pattern was documented in detail with no counterpart for direct interaction. Scene 1 got 5 cursors that walked through fade-only / noise-only / combined; the right shape was a slider + a "Step" button. Scene 3 got 4 cursors that walked through t = 0 / 50 / T-1 / equivalence-demo; the right shape was a slider, period.)
+
+### When you have decided staging is required, the step engine looks like this
 
 ```js
 let cursor = 0;
@@ -200,7 +224,7 @@ return {
 };
 ```
 
-**Critical rules:**
+**Critical rules (when you do use a step engine):**
 - **State is the source of truth, animations are decoration.** `render(state)` produces a correct snapshot from scratch.
 - **Prev = rewind via reset+replay.** Don't write inverse mutations. Disable animations during fast-forward.
 - **One DOM action per step.** Resist cramming several visual changes into one click.
@@ -279,8 +303,14 @@ Copy and fill the bracketed fields:
 > **Scene narrative** (the pedagogical arc this scene must deliver):
 > `[3–5 SENTENCES — what the student should understand by the end]`
 >
-> **Step plan** (if multi-step):
-> `[STEP-BY-STEP NARRATIVE]`
+> **Interaction plan.**
+> List the scene's controls (sliders, buttons, toggles, scrubbers). For each, say what it changes and what re-renders. The default is **single-state direct interaction** (no internal step engine — see §Within-scene interaction). Only add a step plan if the lesson genuinely requires forced sequencing — a derivation that depends on prior reveals, an algorithm trace, a dramatic reveal whose payoff needs buildup. If you write a step plan, **justify in one sentence why direct interaction would lose the lesson**.
+>
+> ```
+> Single-state version (preferred): <which controls, what each does>
+> Step plan (only if justified): <cursors and what each reveals>
+> Justification (only if step plan): <why a slider/button can't carry the lesson>
+> ```
 >
 > **Verification.** Parse-check the file, browser-walkthrough in both themes, and headless-screenshot via `--screenshot=...#scene=[N]` (combine with `&run` for animation gates).
 
@@ -312,6 +342,113 @@ katex.render(
 In a JS string literal, `\\` produces a single `\` for KaTeX. Use `\mathrm{name}` for function names like `dist`, `argmin`. Use `\bigl\{ … \bigr\}` for visible braces (escape with `\{`).
 
 KaTeX uses `currentColor` for most rules — automatically theme-aware via the surrounding element's `color` property.
+
+## Math: render every formula in KaTeX, define every symbol
+
+Two hard rules. Both are easy to violate by accident; both are visible in any screenshot review and either are caught upfront or are caught later by a confused student.
+
+### 1. Every formula renders in KaTeX, not in HTML pseudo-math
+
+HTML's `<sub>`, `<sup>`, and Unicode math glyphs (`β`, `√`, `ᾱ`, `ε̂`) are *labels*, not typesetting. They look fine inline at small scale and look amateur the moment they sit next to a real KaTeX equation in the same page — different fonts, different baselines, different italicization. A student reads "the formulas in this viz are inconsistent" before they read the math.
+
+Use KaTeX for:
+- Any **displayed equation** (formula blocks, hero formulas in scene headers).
+- Any **inline reference that names a symbol with subscripts, fractions, square roots, hats, bars, or accents** — e.g. `x_t`, `\bar\alpha_t`, `\sqrt{1-\beta_t}`, `\hat\varepsilon`. These belong in `katex.render(..., { displayMode: false })`.
+
+HTML markup is fine for:
+- Plain prose mentions of a symbol *as a name*, not as part of an expression — e.g. `<em>β</em>` in "The β slider sets one number".
+- Chart axis labels and legends where a SVG `<text>` element is the natural host. (KaTeX-in-SVG is brittle.)
+- Tabular numerics next to a KaTeX-rendered symbol.
+
+Rendering pattern for inline KaTeX in mid-sentence (this is the clean way):
+
+```js
+const p = document.createElement('p');
+p.appendChild(document.createTextNode('A small MLP learns the mapping '));
+const formula = document.createElement('span');
+p.appendChild(formula);
+katex.render('(x_t,\\,t) \\;\\to\\; \\hat\\varepsilon', formula,
+  { throwOnError: false, displayMode: false });
+p.appendChild(document.createTextNode('. The recipe is one line.'));
+```
+
+Avoid `innerHTML = '...<sub>t</sub>...'` for anything that's mathematical.
+
+### 2. Every symbol the viz uses is defined somewhere visible
+
+If a formula contains a symbol the student hasn't seen defined, the formula is ornamental, not informative. The first scene that introduces a new symbol must either define it inline (in the surrounding prose) or reference a notation block earlier in the viz.
+
+The cheap, durable approach is a **notation block**: a small panel near the start of whichever scene first uses the symbols, listing each symbol on its own row with an italic gloss. The diffusion deep-dive's scene 2 has one — it defines `β_t`, `α_t = 1 − β_t`, `ᾱ_t = ∏α_s`, `ε ~ N(0, I)` before any later scene puts them in a hero formula.
+
+Pattern:
+
+```js
+const NOTATION_LINES = [
+  { tex: '\\beta_t \\in [0, 1]',
+    gloss: 'noise schedule (the DDPM hyperparameter)' },
+  { tex: '\\alpha_t \\;=\\; 1 - \\beta_t',
+    gloss: 'signal weight retained at one step' },
+  { tex: '\\bar\\alpha_t \\;=\\; \\textstyle\\prod_{s\\le t}\\alpha_s',
+    gloss: 'signal retained from x₀ to x_t' },
+  { tex: '\\varepsilon \\sim \\mathcal{N}(0, I)',
+    gloss: 'standard Gaussian noise' },
+];
+// Each row: KaTeX-rendered symbol on the left, italic prose on the right.
+```
+
+Style: italic muted serif for the gloss (matches `.callout-title`), tabular numerics for the symbol column, a small panel border (`1px solid var(--rule)`).
+
+### Audit before reporting done
+
+When the viz uses any non-trivial math, write a one-line audit:
+- "Every formula I display is rendered by `katex.render`."
+- "Every symbol that appears in any formula is defined somewhere a student can find — either inline at first use, or in a notation block."
+
+If you can't write both lines, the viz isn't ready.
+
+(Real story: the diffusion-deepdive shipped scene 4's hero formula `x_{t-1} = (1/√α_t)(x_t - β_t/√(1-ᾱ_t)·ε_t) + √β_t·z` correctly KaTeX-rendered, but `ᾱ_t` was never defined anywhere in the viz. A student looking at scene 4 had no anchor for what the bar meant. The fix was a four-line notation block in scene 2; the bug was that nobody had written the audit out loud before declaring the viz done.)
+
+## Models the viz claims to "produce" — pre-train offline, ship the weights, verify automatically
+
+When the viz claims to do something visible with a neural network ("the trained NN denoises the image", "the reverse process produces a letter M"), in-browser training is **always** the wrong way to drive that claim. Two reasons:
+
+1. **Pedagogy and quality are different problems.** Showing live training in scene N is great pedagogy ("watch the loss drop, watch the vector field develop"), but the *model that drives the visible payoff in scene N+1* should not depend on how long the user trained or which RNG seed they got. The scene-N model is a demo; the scene-N+1 model is the contract.
+2. **Browser CPU budgets lie about quality.** "It looks fine in headless at 3000 steps" hides "the user navigates from scene 5 with a 1500-step early-stop and gets a blob."
+
+The recipe:
+
+- **Pre-train offline** (Node or Python; pin the seed) with a budget the browser can't afford — orders of magnitude more steps, deeper architecture if helpful. Save weights to `precompute/_artifacts/<name>_model.json`.
+- **Inline the weights into `data/datasets.js`** via the build script. The runtime reads `DATA.<name>Model.weights` and instantiates the same architecture.
+- **Keep live in-scene training as a separate, optional, decorative thing.** Scene 5 of the diffusion deep-dive still trains a fresh small MLP live (it's the lesson). Scene 6 ignores that and uses the shipped weights — guaranteeing a clean letter-M every time.
+- **Write an automated visual-quality assertion as a build gate.** Not a screenshot to look at — a script that runs the deployed model end-to-end and computes a numeric metric, then `process.exit(1)` if the metric falls outside the target band. Every commit / "I'm done" claim must run this gate.
+
+Example gate (from `precompute/verify_2d_M.js`):
+
+```js
+const THRESHOLD = 0.07;
+const SEEDS     = [12345, 99, 777, 31415, 271828, 1234, 4242];
+
+let worst = 0;
+for (const seed of SEEDS) {
+  const x = reverseTrajectoryFromShippedModel(seed);
+  const nn = meanNearest(x, DATA.letterM.points);
+  if (nn > worst) worst = nn;
+  console.log(`  seed=${seed}: mean nearest-letterM dist = ${nn.toFixed(4)}  ${nn <= THRESHOLD ? 'PASS' : 'FAIL'}`);
+}
+if (worst > THRESHOLD) {
+  console.error('INVARIANT FAIL'); process.exit(1);
+}
+```
+
+The metric must be **specific to the visual claim**: "a generated point lies within ε of the data manifold" rather than "the loss is low" — a low loss often co-exists with bad generation. The viz's own contract with the student decides what to assert.
+
+### Why this matters
+
+The user-facing failure mode is the worst kind: the viz *runs*, *renders*, *doesn't crash*. The agent's screenshot looks plausible. Only when a real student or lecturer opens it, navigates differently, and the unit doesn't perform — that's when the bug surfaces. By that point the agent's "I verified it" claim has already been made.
+
+A numeric gate moves the verification from "I looked at the picture" (subjective, easily wrong) to "the script said 0.047 < 0.07" (objective). The agent runs the gate before declaring done; failures fail loud.
+
+(Real story: the diffusion-deepdive's scene 6 spent three iterations failing to reliably produce a letter M. The screenshot taken with `&run` always passed because that path ran a 3000-step cold-burst directly; the user's actual flow — navigating from scene 5, which saved an under-trained model to shared state — gave a 1500-step model and the M never emerged. The fix that *worked* was: pre-train an 8000-step model in Node, ship the weights, write `verify_2d_M.js` that fails the build above 0.07 mean nearest-data distance. After that, the M appears every single time.)
 
 ## Voice and language
 
@@ -382,7 +519,7 @@ The patterns above were extracted from three viz that live in the originating re
 |---|---|
 | Scrollytelling carousel + sticky viz | `congress-story/` |
 | Click-step scene engine + dot pager + hash routing | `kmeans-deepdive/js/main.js` |
-| Internal step engine (math walkthrough) | `kmeans-deepdive/js/scenes/scene4.js` |
+| Internal step engine (math walkthrough) | `kmeans-deepdive/js/scenes/scene4.js` — *justified there because k-means is intrinsically a staged iterative algorithm. See §Within-scene interaction; don't import this pattern reflexively for scenes whose lesson isn't a forced sequence.* |
 | Light/dark theme toggle | `kmeans-deepdive/js/theme.js` |
 | Math utility module (e.g. Lloyd's, Voronoi, k-means++) | `kmeans-deepdive/js/kmeans.js` |
 | Pre-canned data + Node generator + verified invariants | `kmeans-deepdive/precompute/build-datasets.js` |
@@ -566,15 +703,61 @@ At that point: `npm i -g playwright` once, then a small helper that takes `(path
 1. Edit the file.
 2. **Parse-check** every JS file you touched (§1).
 3. **Headless screenshot** at one or two viewports (§3).
-4. **Read** the PNG. Inspect.
+4. **Read** the PNG. Inspect against the §Aesthetic-issue checklist below.
 5. If a state needs verifying that requires interaction or scroll, add a `?test=` URL param and re-screenshot.
 6. Browser walkthrough in both themes (§2) for any non-trivial change.
 7. Only then commit + push.
 
 Step 4 — the agent actually looking at the screenshot — is what makes the rest work. Don't skip it. The "trust but verify" rule applies to your own work too.
 
+## Aesthetic-issue checklist (apply to EVERY captured screenshot)
+
+This list is what to look for when you `Read` the PNG. Don't declare a scene done until each of these is verified clear at 1400×900 light theme — and re-checked at 1400×900 dark theme. Most of them are invisible to a code-review pass; they only show up in pixels.
+
+**Cropping / overflow.** Is anything cut at the top, bottom, left, or right edge of the scene's stage area? Specifically:
+- Hero formulae cropped under the topbar — common when a content column outgrew its scene height.
+- Closing captions or stats clipped at the footer edge — same cause from the bottom.
+- Long titles wrapped or sliced — chart titles, button labels, axis ticks.
+- Right-column text wider than the scene-layout right cell — the right column is `minmax(320px, 0.6fr)`; long lines with no wrap word-break and overflow.
+
+If the scene is supposed to fit the viewport, it must fit. Add a `@media (max-height: ...)` block that shrinks panes or adds `overflow: auto` on the scene container (with a clear scroll affordance), and re-screenshot.
+
+**Chart legibility.** Charts often look fine in code but unreadable in pixels. Specifically:
+- A series whose y-range is dwarfed by another on a shared axis ends up as a near-flat line at the foot of the chart (real example: β_t on [1e-4, 0.02] sharing an axis with ᾱ_t on [0, 1] was a horizontal hairline). **Fix**: split into stacked panels, each with its own y-axis. Don't overload a single dual-axis plot if the audience needs to compare both curves.
+- Hairline strokes (`stroke-width: 1`) disappear on projector resolutions. Use `stroke-width: 2–3` for primary curves; reserve thin strokes for grids and rules.
+- Tick labels and legends that fit at 72-DPI but don't at projector size. If the chart's legend reads "βₜ" / "ᾱₜ" in 9 px italics, lecture-hall students won't see it. Use 11 px+ and put titles ABOVE the chart, not as inline legends at curve endpoints.
+- Axis labels truncated. Always reserve enough left/right margin for the longest label you'll print.
+
+**Layout pressure.** The scene's content column may LOOK fine, but there's only so much screen height. Common smells:
+- New element added (callout, slider, secondary panel) silently pushes existing content past the bottom edge — and this is the screenshot agent's blind spot, because you only see the visible portion. After any addition, re-capture and verify *every* element is still in-frame.
+- A second pane was added side-by-side, and at the lecture viewport (1400×900) the right column has no air. Either drop a less-essential element or swap to a vertical stack.
+
+**Animation mid-frame.** The scene engine fades scenes in over 400 ms via `opacity: 0 → 1`. Headless screenshots taken under `--virtual-time-budget` may capture mid-transition — the page looks ghost-faded. Symptoms: text and SVG points present but at low alpha. Defeat this by either (a) raising the budget, or (b) inside the scene, when the `&run` flag is set, force `root.style.transition = 'none'; root.style.opacity = 1;` after painting. Match the pattern in `scene0.js`'s `paintFinal()`.
+
+**Theme contrast.** Anything that's only legible in light mode is a defect in dark mode. Specifically:
+- White-on-white panels (forgot to use `var(--panel)` instead of literal `#fff`).
+- Black SVG strokes (forgot to use `currentColor` / theme tokens).
+- Hairline rules (`#d8d4ca` light / `#383530` dark) disappear in opposite themes if hard-coded.
+
+**Empty state.** Scenes that gate their content behind a button often paint nothing on cursor 0. The first screenshot the user sees is empty space. Always paint *something* meaningful (a noise sample, a faint preview) at cursor 0 so the affordance is clear.
+
+**Off-by-one / cluster grouping.** Group identity colors (the `cluster-N` palette) cross-talk if reused for emphasis. If a callout is amber but amber is also a cluster, students will infer a non-existent group identity. See the cross-talk rule above; reserve a third hue for emphasis.
+
+### Forcing the review
+
+Before reporting a scene as done, write the four-line review out loud:
+1. "I screenshotted scene N at 1400×900 light theme."
+2. "I `Read` the PNG and looked at it."
+3. "I checked it against §Aesthetic-issue checklist — nothing in the list is present."
+4. "I also screenshotted dark theme and the issues from §3 are not present there either."
+
+If you can't write this out, the scene isn't done. Don't claim it is.
+
+Real story (this skill, May 2026): a five-agent fan-out shipped six scenes that all *parsed* and all *visually drew* — and then user inspection found three different scenes with cropping issues, one chart where two curves were mutually invisible, one scene with a fade-in caught mid-transition, and a generated digit pane that looked OK in scene 5's vector field but didn't reverse to the right shape in scene 6 (the model trained 1500 steps wasn't enough — needed 3000). Every one of these was visible in a screenshot the agent took but didn't actually open. The cost was a full revisit pass. The lesson: the screenshot is only verification if you look at it, and you only know what you saw if you write it down.
+
 ## Things to never do
 
+- **Aim for a step engine.** A within-scene cursor system is an option, not a preference — considered and used if the lesson genuinely needs forced staging, never aimed for. The default is single-state direct interaction (slider, button, toggle). If your draft includes cursors and the scene's payoff is reachable by dragging a slider or pressing one button, drop the cursors. See §Within-scene interaction.
 - **Inline cluster/categorical colors** (`fill="#..."` in SVG, `style="color: #..."` in DOM). Use CSS classes (`.cluster-N`, `.voronoi-cell.cluster-N`) so theme switch works.
 - **Inject `<style>` tags from JS.** Write per-scene CSS files, link them in `index.html`.
 - **Auto-run animations on `onEnter`** for interactive scenes (defeats the click-to-think loop). The `&run` hash flag is the *only* exception, and only for headless verification.
@@ -626,4 +809,4 @@ Step 4 — the agent actually looking at the screenshot — is what makes the re
 
 9. **Pick the right iteration scale.** Targeted edits (single concept across ≤3 files): do directly, no agent. Cross-cutting additions across many scenes (e.g. add a visual layer everywhere pertinent): one focused agent with a per-scene plan, never full fan-out — the existing logic must not break. Major redesigns or new scenes: dispatch as Phase-1 agents per the parallel fan-out section. Wrong scale wastes either the agent's context or your own.
 
-10. Don't commit. Hand back to the user for review.
+10. Commit and push after verification.
