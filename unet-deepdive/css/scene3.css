@@ -1,197 +1,267 @@
-/* Scene 3 — Pooling collapses. The decoder must uncollapse.
-   Side-by-side encoder (down) vs decoder (up), then a comparison strip. */
+/* Scene 3 — Three stages: encoder → bottleneck → decoder.
 
-.s3-root { padding: 0 24px 32px; }
+   Five panels in a single row:
+     [input] -> [encoder box] -> [bottleneck] -> [decoder box] -> [segmentation]
+
+   Stages and arrows light up progressively as the user steps through; the
+   bottleneck and segmentation panels start dim and fade in as their
+   producing stage activates. */
+
+.s3-root { padding: 0 4px 32px; }
 .s3-wrap {
-  max-width: 1280px;
+  max-width: 1180px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 22px;
 }
 
-/* Hero */
+/* ---- Hero ----------------------------------------------------------- */
 .s3-hero h1 { margin-bottom: 4px; }
 .s3-hero .subtitle {
-  max-width: 880px;
   font-style: italic;
   color: var(--ink-secondary);
   margin: 0;
 }
+
 .s3-mini-host { align-self: flex-start; }
 
-/* Two-column main */
-.s3-main {
+/* ---- Pipeline (the big diagram) ------------------------------------ */
+.s3-pipeline {
   display: flex;
-  gap: 32px;
+  flex-direction: row;
+  align-items: center;
   justify-content: center;
+  gap: 14px;
   flex-wrap: wrap;
-}
-.s3-col {
-  flex: 0 1 480px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  padding: 22px 16px;
   background: var(--card-bg);
   border: 1px solid var(--rule);
-  border-radius: 4px;
-  padding: 18px 20px;
+  border-radius: 6px;
 }
-.s3-col-enc { border-left: 3px solid var(--cnn-pos, #1f6f9f); }
-.s3-col-dec { border-left: 3px solid var(--accent, #d97a1f); }
-.s3-col-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  font-family: "SF Mono", Menlo, monospace;
-  color: var(--ink-secondary);
-}
-.s3-col-enc .s3-col-eyebrow { color: var(--cnn-pos, #1f6f9f); }
-.s3-col-dec .s3-col-eyebrow { color: var(--accent, #d97a1f); }
 
-.s3-col-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
+/* Tensor panels (input, bottleneck, segmentation). */
 .s3-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-}
-.s3-panel-cap {
-  font-size: 12px;
-  font-family: "SF Mono", Menlo, monospace;
-  color: var(--ink);
-  font-weight: 600;
-}
-.s3-canvas-host {
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.s3-canvas-host canvas { display: block; }
-.s3-arrow {
-  font-family: "SF Mono", Menlo, monospace;
-  font-size: 13px;
-  color: var(--ink-secondary);
-  letter-spacing: 0.04em;
-}
-
-/* Comparison strip */
-.s3-compare {
-  background: var(--card-bg);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  padding: 18px 20px;
-  opacity: 0.35;
+  gap: 8px;
+  opacity: 1;
   transition: opacity 0.25s;
 }
-.s3-compare.s3-visible { opacity: 1; }
-.s3-compare-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  font-family: "SF Mono", Menlo, monospace;
-  color: var(--accent, #d97a1f);
-  margin-bottom: 12px;
-}
-.s3-compare-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 22px;
-  flex-wrap: wrap;
-}
-.s3-cmp-panel {
+.s3-panel-head {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 1px;
+  text-align: center;
 }
-.s3-vs {
+.s3-panel-name {
   font-family: "Iowan Old Style", Palatino, Georgia, serif;
   font-style: italic;
-  font-size: 22px;
-  color: var(--ink-secondary);
-}
-.s3-cmp-note {
-  margin-top: 14px;
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 14px;
   color: var(--ink);
-  text-align: center;
-  max-width: 760px;
-  margin-left: auto;
-  margin-right: auto;
+  font-weight: 500;
 }
-.s3-cmp-handoff {
-  display: block;
-  margin-top: 6px;
-  font-style: italic;
-  color: var(--accent, #d97a1f);
+.s3-panel-sub {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10.5px;
+  color: var(--ink-secondary);
+  letter-spacing: 0.02em;
 }
 
-/* Caption + controls */
-.s3-caption {
-  font-style: italic;
-  color: var(--ink-secondary);
-  text-align: center;
-  margin: 0;
-  line-height: 1.55;
-}
-.s3-controls {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  padding: 12px 16px;
-  background: var(--bg);
+.s3-panel-body {
   border: 1px solid var(--rule);
   border-radius: 4px;
-  flex-wrap: wrap;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
 }
-.s3-control-group { display: flex; align-items: center; gap: 10px; }
-.s3-control-label {
+.s3-panel-body canvas { display: block; }
+
+/* Bottleneck panel deserves a small visual cue: a slightly recessed
+   border tint that says "this is the named thing". */
+.s3-bottleneck .s3-panel-body {
+  border: 1.5px solid var(--rule);
+}
+.s3-bottleneck.s3-revealed .s3-panel-body {
+  border-color: var(--cnn-purple, #7a5c8c);
+  box-shadow: 0 0 0 2px rgba(122, 92, 140, 0.12);
+}
+.s3-bottleneck.s3-revealed .s3-panel-name {
+  color: var(--cnn-purple, #7a5c8c);
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Bottleneck and segmentation start dim; brighten when revealed. */
+.s3-bottleneck:not(.s3-revealed),
+.s3-seg:not(.s3-revealed) {
+  opacity: 0.45;
+}
+
+/* Stage boxes (encoder, decoder). */
+.s3-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 110px;
+  height: 88px;
+  padding: 10px 8px;
+  background: var(--bg);
+  border: 1.5px dashed var(--rule);
+  border-radius: 6px;
+  text-align: center;
+  transition: border-color 0.25s, background 0.25s, color 0.25s;
+}
+.s3-stage-name {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-secondary);
+  font-weight: 500;
+}
+.s3-stage-sub {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
+
+.s3-stage.s3-lit {
+  border-style: solid;
+  background: var(--card-bg);
+}
+.s3-enc.s3-lit {
+  border-color: var(--cnn-pos);
+  color: var(--cnn-pos);
+}
+.s3-enc.s3-lit .s3-stage-name { color: var(--cnn-pos); }
+.s3-dec.s3-lit {
+  border-color: var(--cnn-accent, #c08a3e);
+  color: var(--cnn-accent, #c08a3e);
+}
+.s3-dec.s3-lit .s3-stage-name { color: var(--cnn-accent, #c08a3e); }
+
+/* Arrows. */
+.s3-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--rule);
+  transition: color 0.25s;
+  flex: 0 0 auto;
+}
+.s3-arrow-shaft {
+  display: inline-block;
+  width: 22px;
+  height: 1.5px;
+  background: currentColor;
+}
+.s3-arrow-head {
   font-size: 11px;
-  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-left: -4px;
+}
+.s3-arrow.s3-lit { color: var(--ink-secondary); }
+
+/* ---- Sample picker ------------------------------------------------- */
+.s3-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.s3-selector-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-secondary);
   font-family: "SF Mono", Menlo, monospace;
 }
-#s3-step { width: 220px; }
-.s3-control-value {
-  font-family: "SF Mono", Menlo, monospace;
-  font-size: 12px;
-  color: var(--ink);
-  min-width: 38px;
-  text-align: right;
+.s3-selector-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.s3-btn {
-  font-family: inherit;
-  font-size: 12px;
-  padding: 6px 12px;
+.s3-thumb {
   background: var(--bg);
-  color: var(--ink);
-  border: 1px solid var(--rule);
+  border: 1.5px solid var(--rule);
   border-radius: 3px;
+  padding: 3px;
   cursor: pointer;
+  display: block;
+  line-height: 0;
+  transition: border-color 0.15s;
 }
-.s3-btn:hover:not(:disabled) { background: var(--card-bg); }
-.s3-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.s3-btn-primary {
-  background: var(--accent, #d97a1f);
-  color: var(--bg);
-  border-color: var(--accent, #d97a1f);
-  font-weight: 600;
+.s3-thumb:hover { border-color: var(--ink-secondary); }
+.s3-thumb.active { border-color: var(--cnn-pos); }
+.s3-thumb-host { display: block; line-height: 0; }
+.s3-thumb-host canvas { display: block; }
+
+/* ---- Caption + explainer ------------------------------------------ */
+.s3-caption {
+  text-align: center;
+  margin: 0;
+  max-width: 880px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Narrow viewport */
-@media (max-width: 1100px) {
-  .s3-main { flex-direction: column; align-items: center; }
-  .s3-col { flex: 1 1 auto; max-width: 520px; }
+.s3-explainer {
+  background: var(--card-bg);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--cnn-purple, #7a5c8c);
+  border-radius: 4px;
+  padding: 16px 22px;
+  opacity: 0.35;
+  transition: opacity 0.3s;
+  max-width: 820px;
+  margin: 0 auto;
+}
+.s3-explainer.s3-revealed { opacity: 1; }
+.s3-explainer-title {
+  font-family: "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cnn-purple, #7a5c8c);
+  margin: 0 0 8px;
+}
+.s3-explainer-body {
+  font-family: "Iowan Old Style", Palatino, Georgia, serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.s3-explainer-body:last-child { margin-bottom: 0; }
+.s3-explainer-body strong { font-weight: 600; }
+.s3-explainer-body em { font-style: italic; color: var(--ink-secondary); }
+
+/* ---- Controls ------------------------------------------------------ */
+.s3-controls { margin-top: 4px; }
+#s3-step { width: 200px; }
+
+/* ---- Narrow viewports --------------------------------------------- */
+@media (max-width: 1080px) {
+  .s3-pipeline { gap: 10px; padding: 18px 10px; }
+  .s3-stage { width: 96px; height: 80px; padding: 8px 6px; }
+  .s3-arrow-shaft { width: 14px; }
+}
+@media (max-width: 820px) {
+  .s3-pipeline {
+    /* On a narrow screen the row is too wide; let panels wrap and rely
+       on the lit/dim state to keep the reading order clear. */
+    flex-direction: row;
+  }
+  .s3-arrow { transform: none; }
 }

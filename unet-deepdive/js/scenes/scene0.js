@@ -230,16 +230,25 @@
         'press <em>play forward</em> (step 3) to watch the activation flow.',
     }, hero);
 
-    /* ---- Sample picker + step controls --------------------------- */
+    /* ---- Sample picker + step controls ---------------------------
+       The picker row stays in the DOM at all times so its width does
+       not flicker between steps; visibility is gated by the
+       .s0-show-picker class set on .s0-arch (added at step >= 1). */
     const ctrl = el('div', { class: 's0-controls-top' }, wrap);
     const sampleRow = el('div', { class: 's0-sample-row' }, ctrl);
     el('span', { class: 's0-control-label', text: 'sample' }, sampleRow);
     const sampleBtns = [];
+    const sampleThumbs = [];
     for (let i = 0; i < D.samples.length; i++) {
       const b = el('button', {
-        type: 'button', class: 's0-sample-btn', text: String(i + 1),
+        type: 'button', class: 's0-sample-btn',
         'data-idx': String(i),
+        'aria-label': 'sample ' + (i + 1),
+        title: 'sample ' + (i + 1),
       }, sampleRow);
+      const thumb = el('div', { class: 's0-sample-thumb' }, b);
+      sampleThumbs.push(thumb);
+      el('span', { class: 's0-sample-num', text: String(i + 1) }, b);
       sampleBtns.push(b);
     }
     const playBtn = el('button', {
@@ -586,27 +595,21 @@
     const resetBtn = el('button', { type: 'button', text: 'reset' }, navGroup);
 
     /* ---- State -------------------------------------------------- */
-    function pickRichest(samples) {
-      let best = 0, bestCount = -1;
-      for (let k = 0; k < samples.length; k++) {
-        const seen = new Set();
-        const lbl = samples[k].label;
-        for (let i = 0; i < lbl.length; i++) {
-          for (let j = 0; j < lbl[0].length; j++) seen.add(lbl[i][j]);
-        }
-        if (seen.size > bestCount) { bestCount = seen.size; best = k; }
-      }
-      return best;
-    }
     const state = {
       step: 0,
-      sampleIdx: pickRichest(D.samples),
+      sampleIdx: 0,
       hoveredIdx: null,
       sweepIdx: -1,
       sweepTimer: null,
       runTimer: null,
     };
     const sample = function () { return D.samples[state.sampleIdx]; };
+
+    /* Paint each picker thumbnail once with its sample's RGB image. */
+    const THUMB_PX = 28;
+    sampleThumbs.forEach(function (host, i) {
+      window.Drawing.paintRGB(host, D.samples[i].input, THUMB_PX);
+    });
 
     /* ---- Caption text ------------------------------------------- */
     function captionFor(step) {
@@ -757,6 +760,8 @@
       arch.classList.toggle('s0-show-bookends', step >= 1);
       arch.classList.toggle('s0-show-hover',    step >= 2);
       arch.classList.toggle('s0-show-sweep',    step >= 3);
+      // Picker row is gated on the wrap so the rule above the row hides too.
+      wrap.classList.toggle('s0-show-picker', step >= 1);
 
       caption.textContent = captionFor(step);
       stepInput.value = String(step);
@@ -790,7 +795,7 @@
     nextBtn.addEventListener('click', function () { applyStep(state.step + 1); });
     resetBtn.addEventListener('click', function () {
       applyStep(0);
-      state.sampleIdx = pickRichest(D.samples);
+      state.sampleIdx = 0;
       updateSampleBtns();
       renderBookends();
     });

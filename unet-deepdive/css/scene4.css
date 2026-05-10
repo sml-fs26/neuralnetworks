@@ -2,10 +2,17 @@
 
    Layout:
      hero
+     mini-map
      sample selector strip
-     pipeline row: input | -> | enc1 | -> | enc2 | -> | enc3
-     caption
-     controls */
+     pipeline row:
+       input | conv | enc1 | pool | pool1 | conv | enc2 | pool | pool2 | conv | enc3
+     caption + footnote
+     controls
+
+   Pipeline panels are sized proportional to spatial extent. Pool outputs
+   share px with the next conv-block input so the eye reads "this collapses
+   to that". Pool cards get a slightly different border accent to keep them
+   distinguishable when several panels are lit at once. */
 
 .s4-root .s4-wrap {
   display: flex;
@@ -71,7 +78,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
   padding: 16px 8px 22px;
   background: var(--card-bg);
@@ -91,6 +98,9 @@
   font-style: italic;
   font-size: 12px;
   color: var(--ink-secondary);
+  text-align: center;
+  max-width: 14ch;
+  line-height: 1.25;
 }
 
 .s4-input-host,
@@ -120,6 +130,11 @@
   opacity: 1;
   border-color: var(--ink-secondary);
 }
+/* Pool cards get an amber accent on the lit border so they stand out
+   from conv-block cards in a long lit pipeline. */
+.s4-card-pool.s4-visible {
+  border-color: var(--cnn-accent);
+}
 
 .s4-card-head {
   display: flex;
@@ -144,16 +159,23 @@
   font-size: 11px;
 }
 
-/* Arrows between stages -- amber chevron + a one-line op label below. */
+/* Arrows between stages -- amber chevron + a one-line op label below.
+   Pool arrows use a slightly heavier/different hue so the viewer can scan
+   the pipeline and read "conv, pool, conv, pool, conv" without looking at
+   the labels. */
 .s4-arrow {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 28px;
+  font-size: 24px;
   color: var(--cnn-accent);
   line-height: 1;
-  padding: 0 4px;
+  padding: 0 2px;
   flex: 0 0 auto;
+}
+.s4-arrow-pool {
+  color: var(--ink-secondary);
+  font-weight: 600;
 }
 .s4-arrow-label {
   font-family: "Iowan Old Style", Palatino, Georgia, serif;
@@ -165,7 +187,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Caption / controls
+   Caption / footnote / controls
    --------------------------------------------------------------------------- */
 
 .s4-caption {
@@ -174,13 +196,30 @@
   font-size: 14.5px;
   min-height: 1.4em;
 }
+.s4-footnote {
+  margin: 0 4px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  font-style: italic;
+}
+.s4-footnote code {
+  font-family: "SF Mono", Menlo, monospace;
+  font-style: normal;
+  font-size: 11.5px;
+  background: var(--card-bg);
+  padding: 0 4px;
+  border-radius: 2px;
+}
 .s4-controls { margin-top: 6px; }
 
 /* ---------------------------------------------------------------------------
    Responsive: at narrower widths stack vertically and rotate the arrows.
+   The 6-panel pipeline crosses ~1300px when laid out fully, so we kick in
+   the column layout earlier than the original 4-panel version.
    --------------------------------------------------------------------------- */
 
-@media (max-width: 1100px) {
+@media (max-width: 1320px) {
   .s4-pipeline {
     flex-direction: column;
   }

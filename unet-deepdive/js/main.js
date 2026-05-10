@@ -11,17 +11,23 @@
   // SCENES is the visible deck. `key` names the registration in
   // `window.scenes` (kept stable as scene{N}.js so file names don't shift
   // when we add or drop entries from the deck).
+  // Deck arc: big picture → details → big picture.
+  //   1-3   architecture overview, what U-Net does, three-stage flow
+  //   4-6   encoder details (block-by-block + pooling, filters, bottleneck)
+  //   7-8   decoder details (decoder walk, skip connections)
+  //   9-10  transposed convolution special
+  //   11-14 back to big picture (wired reference, loss, training, failures)
   const SCENES = [
     { key: 'scene0',  title: 'A U-Net, end to end' },
     { key: 'scene1',  title: 'From one label to a label per pixel' },
-    { key: 'scene2',  title: 'What a segmentation dataset looks like' },
-    { key: 'scene4',  title: 'The encoder is the CNN you already know' },
+    { key: 'scene3',  title: 'Three stages: encoder, bottleneck, decoder' },
+    { key: 'scene4',  title: 'Inside the encoder: conv-block, then pool' },
     { key: 'scene10', title: 'What the filters look like' },
     { key: 'scene5',  title: '16×16 of pure semantics' },
-    { key: 'scene6',  title: 'How do you make a map bigger?' },
-    { key: 'scene7',  title: 'Transposed convolution: stamp instead of slide' },
     { key: 'scene8',  title: 'Walking up the right side of the U' },
     { key: 'scene9',  title: 'What the bottleneck threw away' },
+    { key: 'scene6',  title: 'How do you make a map bigger?' },
+    { key: 'scene7',  title: 'Transposed convolution: filter slides, input stamps' },
     { key: 'scene11', title: 'The U-Net, fully wired' },
     { key: 'scene12', title: 'The loss that knows about every pixel' },
     { key: 'scene13', title: 'Watching the segmentation come into focus' },
