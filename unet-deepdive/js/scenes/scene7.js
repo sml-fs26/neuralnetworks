@@ -66,6 +66,7 @@
   const FILTER_LABELS = { plus: 'plus  ＋', edge: 'edge ↓', gaussian: 'blur' };
 
   // Pixel sizes. Output 11×11 at 50 px = 550 px wide (stride 4) — fits 1500px.
+  const INPUT_CELL   = 60;       // dense X is 3×3, so 180 px wide — comfortable
   const STRIDED_CELL = 50;
   const OUT_CELL     = 50;
   const RUN_STEP_MS  = 950;
@@ -322,6 +323,21 @@
       ctx.setLineDash([]);
     }
 
+    // Single-cell highlight ring (used to mark the active input cell in X
+    // so it ties to the filter centre on the strided panel).
+    if (opts.highlightCell) {
+      const h = opts.highlightCell;
+      ctx.strokeStyle = h.color || '#d97a1f';
+      ctx.lineWidth = 3;
+      const inset = 2;
+      ctx.strokeRect(
+        h.col * cell + inset,
+        h.row * cell + inset,
+        cell - 2 * inset,
+        cell - 2 * inset
+      );
+    }
+
     return { W, H, cell, rows, cols };
   }
 
@@ -418,8 +434,24 @@
     el('span', { class: 's7-panel-eyebrow', text: 'how the output is built' }, panelTitle);
     const panelProgress = el('span', { class: 's7-panel-progress', text: 'press → to begin' }, panelTitle);
 
-    // STRIDED INPUT row
-    const stridedRow = el('div', { class: 's7-row' }, panel);
+    // INPUT X + STRIDED INPUT row (side by side, with an arrow between them).
+    const stridedRow = el('div', { class: 's7-row s7-row-inputs' }, panel);
+
+    // Dense input X (left).
+    const inputCol = el('div', { class: 's7-col' }, stridedRow);
+    el('div', { class: 's7-col-cap', text: 'input X  (3 × 3 — the original feature map cells)' }, inputCol);
+    const inputHost = el('div', { class: 'canvas-host s7-canvas-host' }, inputCol);
+    el('div', {
+      class: 's7-col-sub',
+      text: 'ring marks the cell whose stamp is being deposited next',
+    }, inputCol);
+
+    // Side arrow + caption: "insert s−1 zeros".
+    const sideArrowCol = el('div', { class: 's7-side-arrow' }, stridedRow);
+    const sideArrowGlyph = el('div', { class: 's7-side-arrow-glyph', text: '→' }, sideArrowCol);
+    const sideArrowText = el('div', { class: 's7-side-arrow-text', text: 'insert s − 1 zeros' }, sideArrowCol);
+
+    // Strided / padded input X (right).
     const stridedCol = el('div', { class: 's7-col' }, stridedRow);
     el('div', { class: 's7-col-cap', text: 'strided input  (X placed at every s-th cell; zeros in between; padded so the filter has room to slide)' }, stridedCol);
     const stridedHost = el('div', { class: 'canvas-host s7-canvas-host' }, stridedCol);
@@ -514,6 +546,24 @@
       cStrideV.textContent = String(state.stride);
       const od = outDim(state.stride);
       cOutV.textContent = od + ' × ' + od;
+    }
+
+    function activeInputCell() {
+      const idx = state.step === 0 ? 0 : Math.min(state.step - 1, maxStep() - 1);
+      return trace.meta[idx].inputCell;
+    }
+
+    function renderInput() {
+      const [i, j] = activeInputCell();
+      paintGrid(inputHost, state.input, {
+        cell: INPUT_CELL,
+        vmax: Math.max(2, maxAbs(state.input)),
+        highlightCell: { row: i, col: j, color: '#d97a1f' },
+      });
+      sideArrowText.textContent = state.stride === 1
+        ? 'no zeros (s = 1)'
+        : 'insert ' + (state.stride - 1) + ' zero'
+          + (state.stride - 1 === 1 ? '' : 's') + ' between cells';
     }
 
     function renderStrided() {
@@ -641,6 +691,7 @@
     function render() {
       if (state.step > maxStep()) state.step = maxStep();
       renderCheat();
+      renderInput();
       renderStrided();
       renderOutput();
       renderNarration();
